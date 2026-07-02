@@ -1,0 +1,37 @@
+# TourMateAI backend dependencies.
+# Versions are intentionally unpinned here; pin them (pip freeze) once the
+# environment is first set up in Phase 0, then commit the pinned versions.
+
+# --- Web framework (teammate: app skeleton) ---
+Flask
+flask-cors
+python-dotenv
+
+# --- Database ---
+SQLAlchemy
+Flask-SQLAlchemy
+PyMySQL                 # MySQL driver
+
+# --- Auth ---
+firebase-admin
+
+# --- External API services ---
+requests
+googlemaps
+
+# --- AI: Recommendation engine (me) ---
+scikit-learn
+pandas
+numpy
+
+# --- AI: RAG chatbot (me) ---
+google-generativeai     # Gemini
+chromadb
+sentence-transformers
+
+# --- AI: Image recognition (me) ---
+tensorflow
+pillow
+
+# --- Testing ---
+pytest
