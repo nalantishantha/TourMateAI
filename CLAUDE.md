@@ -77,8 +77,10 @@ TourMateAI/
 ├── backend/
 │   ├── app/
 │   │   ├── __init__.py       # Flask app factory; registers blueprints
-│   │   ├── config.py         # env-driven config
-│   │   ├── models/           # SQLAlchemy models (shared schema)
+│   │   ├── config.py         # env-driven config (builds MySQL URI from .env)
+│   │   ├── extensions.py     # db + migrate singletons (avoid circular imports)
+│   │   ├── models/           # SQLAlchemy models (shared schema — the data tier)
+│   │   ├── seed.py           # `flask seed-db` — sample Sri Lankan attractions
 │   │   ├── routes/           # web/business endpoints                        (teammate)
 │   │   ├── services/         # Google Maps, OpenWeather, Firebase            (teammate)
 │   │   └── ai/               # ← AI package                                  (me)
@@ -87,6 +89,7 @@ TourMateAI/
 │   │       ├── chatbot/
 │   │       ├── vision/
 │   │       └── shared/       # config, schemas, context helpers
+│   ├── migrations/           # Alembic (Flask-Migrate) schema history
 │   ├── tests/
 │   ├── requirements.txt
 │   └── run.py
@@ -95,7 +98,6 @@ TourMateAI/
 │   ├── notebooks/            # EDA, prototyping
 │   ├── training/             # training scripts (CNN, KB build, eval)
 │   └── models/               # saved model artifacts loaded by app/ai/
-├── database/                 # schema.sql, migrations, seed data
 ├── CLAUDE.md
 └── plan.md
 ```
