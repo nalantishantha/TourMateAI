@@ -15,10 +15,12 @@ help through a web application backed by three AI capabilities:
 This is a university final project (CIS6035, Cardiff Metropolitan / ICBT). Academic prototype
 scope, MVP quality, free-tier tooling.
 
-> **Status:** Greenfield. As of this file's creation the repo contains only `docs/` and planning
-> files (`CLAUDE.md`, `plan.md`). The structure and commands below describe the **intended** layout
-> agreed in planning; they become live once Phase 0 scaffolding (see `plan.md`) is done. Keep this
-> file updated as the code lands.
+> **Status:** Phase 0 scaffolding is in place — the full directory tree, per-area `README.md`s,
+> empty package `__init__.py` stubs, `backend/requirements.txt`, `.env.example`, and
+> `docs/api-contract.md` all exist. What does **not** exist yet: the Flask app factory
+> (`backend/app/__init__.py` is empty), `backend/run.py`, and `backend/app/ai/blueprint.py`. So the
+> layout below is real, but the run/test commands only work once those files are written. Update
+> this note as modules land.
 
 ## Key Decisions (these override the original proposal)
 
@@ -101,12 +103,14 @@ TourMateAI/
 ## AI ↔ Backend Contracts (source of truth for parallel work)
 
 These JSON contracts are what the teammate codes against. Keep them stable; version if they change.
+**`docs/api-contract.md` is the fuller source of truth** (full request/response examples + changelog,
+currently DRAFT v0.1) — the summary below must stay in sync with it.
 
-- `POST /api/ai/recommend` → `{ user_id, preferences{interests[],budget,duration}, context{location,weather,time} }`
+- `POST /api/ai/recommend` → `{ user_id, preferences{interests[],budget,duration_days}, context{location,weather,time} }`
   ⇒ `{ recommendations: [{attraction_id, name, score, reason}] }`
 - `POST /api/ai/chat` → `{ session_id, message, context{location,weather} }`
   ⇒ `{ reply, sources: [...], suggestions: [...] }`
-- `POST /api/ai/identify` (multipart image) → `{ landmark, confidence, info{name,location,history}, nearby: [...] }`
+- `POST /api/ai/identify` (multipart/form-data, field name `image`) → `{ landmark, confidence, info{name,location,history}, nearby: [...] }`; below threshold ⇒ `{ landmark: null, confidence, message }`
 
 ## Commands
 
@@ -141,7 +145,12 @@ python ai_lab/training/evaluate.py         # recommendation accuracy, model metr
 ## Conventions & Constraints
 
 - **Secrets:** API keys (Gemini, Google Maps, OpenWeather, Firebase) via `.env` only; never commit.
-  Keep a `.env.example` with key names.
+  `.env.example` is the authoritative key list — key names include `GEMINI_API_KEY`,
+  `GOOGLE_MAPS_API_KEY`, `OPENWEATHER_API_KEY`, `FIREBASE_CREDENTIALS` (path to service-account JSON),
+  `DB_*` (MySQL), `CHROMA_DB_PATH`, and `EMBEDDING_MODEL` (default `all-MiniLM-L6-v2`). Frontend uses
+  its own `VITE_*` vars.
+- **Dependencies:** `backend/requirements.txt` is intentionally **unpinned** for now — pin versions
+  (`pip freeze`) once the environment is first set up in Phase 0, then commit the pinned file.
 - **RAG grounding:** the chatbot must answer from retrieved KB context; if retrieval is empty, say
   so rather than let Gemini free-hallucinate. Always return `sources`.
 - **Gemini free tier:** mind rate limits — cache where sensible, keep prompts lean, and fail
