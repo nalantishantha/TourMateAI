@@ -1,8 +1,9 @@
-// Login page — email/password. Plain/unstyled; design comes later.
+// Login page — email/password, wrapped in the AuthLayout brand shell.
 
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import AuthLayout from '../components/layout/AuthLayout'
 
 export default function Login() {
   const { login } = useAuth()
@@ -30,39 +31,55 @@ export default function Login() {
   }
 
   return (
-    <div style={{ maxWidth: 320, margin: '48px auto', padding: 16 }}>
-      <h1>Log in</h1>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="email">Email</label><br />
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="email"
-          />
-        </div>
-        <div style={{ marginTop: 8 }}>
-          <label htmlFor="password">Password</label><br />
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="current-password"
-          />
-        </div>
-        {error && <p style={{ color: 'red' }} role="alert">{error}</p>}
-        <button type="submit" disabled={submitting} style={{ marginTop: 12 }}>
-          {submitting ? 'Logging in…' : 'Log in'}
-        </button>
-      </form>
-      <p style={{ marginTop: 12 }}>
-        No account? <Link to="/signup">Sign up</Link>
-      </p>
-    </div>
+    <AuthLayout>
+      <div className="auth-card">
+        <h2 className="auth-title">Welcome back</h2>
+        <p className="auth-lead">Log in to pick up your journey where you left off.</p>
+
+        {error && (
+          <div className="alert alert-error" role="alert">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} noValidate>
+          <div className="field">
+            <label className="label" htmlFor="email">Email</label>
+            <input
+              id="email"
+              className="input"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+            />
+          </div>
+
+          <div className="field">
+            <label className="label" htmlFor="password">Password</label>
+            <input
+              id="password"
+              className="input"
+              type="password"
+              placeholder="Your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+            />
+          </div>
+
+          <button type="submit" className="btn btn-primary btn-lg btn-block" disabled={submitting}>
+            {submitting ? 'Logging in…' : 'Log in'}
+          </button>
+        </form>
+
+        <p className="auth-switch">
+          New to TourMateAI? <Link to="/signup">Create an account</Link>
+        </p>
+      </div>
+    </AuthLayout>
   )
 }

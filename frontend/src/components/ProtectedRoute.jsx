@@ -9,7 +9,14 @@ export default function ProtectedRoute({ children }) {
   const location = useLocation()
 
   // Wait for the first Firebase auth resolution before deciding.
-  if (loading) return <p style={{ padding: 24 }}>Loading…</p>
+  if (loading) {
+    return (
+      <div className="loading-screen">
+        <div className="spinner" aria-hidden="true" />
+        <span>Getting things ready…</span>
+      </div>
+    )
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace state={{ from: location }} />

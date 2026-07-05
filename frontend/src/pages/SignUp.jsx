@@ -1,8 +1,9 @@
-// Sign-up page — email/password. Plain/unstyled; design comes later.
+// Sign-up page — email/password, wrapped in the AuthLayout brand shell.
 
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import AuthLayout from '../components/layout/AuthLayout'
 
 export default function SignUp() {
   const { signup } = useAuth()
@@ -29,40 +30,59 @@ export default function SignUp() {
   }
 
   return (
-    <div style={{ maxWidth: 320, margin: '48px auto', padding: 16 }}>
-      <h1>Sign up</h1>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="email">Email</label><br />
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="email"
-          />
-        </div>
-        <div style={{ marginTop: 8 }}>
-          <label htmlFor="password">Password</label><br />
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="new-password"
-            minLength={6}
-          />
-        </div>
-        {error && <p style={{ color: 'red' }} role="alert">{error}</p>}
-        <button type="submit" disabled={submitting} style={{ marginTop: 12 }}>
-          {submitting ? 'Creating account…' : 'Sign up'}
-        </button>
-      </form>
-      <p style={{ marginTop: 12 }}>
-        Already have an account? <Link to="/login">Log in</Link>
-      </p>
-    </div>
+    <AuthLayout>
+      <div className="auth-card">
+        <h2 className="auth-title">Start exploring</h2>
+        <p className="auth-lead">
+          Create a free account and let TourMateAI plan your Sri Lankan adventure.
+        </p>
+
+        {error && (
+          <div className="alert alert-error" role="alert">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} noValidate>
+          <div className="field">
+            <label className="label" htmlFor="email">Email</label>
+            <input
+              id="email"
+              className="input"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+            />
+          </div>
+
+          <div className="field">
+            <label className="label" htmlFor="password">Password</label>
+            <input
+              id="password"
+              className="input"
+              type="password"
+              placeholder="At least 6 characters"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="new-password"
+              minLength={6}
+            />
+            <p className="hint">Use at least 6 characters.</p>
+          </div>
+
+          <button type="submit" className="btn btn-primary btn-lg btn-block" disabled={submitting}>
+            {submitting ? 'Creating account…' : 'Create account'}
+          </button>
+        </form>
+
+        <p className="auth-switch">
+          Already have an account? <Link to="/login">Log in</Link>
+        </p>
+      </div>
+    </AuthLayout>
   )
 }
