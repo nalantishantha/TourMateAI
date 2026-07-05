@@ -14,6 +14,7 @@ from flask_cors import CORS
 from .ai import ai_bp
 from .config import Config
 from .extensions import db, migrate
+from .routes.auth import auth_bp
 from .seed import register_cli
 
 
@@ -30,6 +31,7 @@ def create_app(config_class=Config):
     from . import models  # noqa: F401
 
     # Blueprints.
+    app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(ai_bp, url_prefix="/api/ai")
 
     # CLI commands (flask seed-db).
