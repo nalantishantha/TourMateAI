@@ -9,6 +9,7 @@ import PageContainer from '../components/layout/PageContainer'
 import AttractionImage from '../components/explore/AttractionImage'
 import AttractionMap from '../components/explore/AttractionMap'
 import StarRating from '../components/explore/StarRating'
+import WeatherCard from '../components/weather/WeatherCard'
 import {
   fetchAttraction,
   logInteraction,
@@ -294,6 +295,15 @@ export default function AttractionDetail() {
                     <dd>{attraction.category}</dd>
                   </div>
                 </dl>
+              </section>
+
+              <section className="card card-pad">
+                <h2 className="detail-section-title">Weather</h2>
+                <WeatherCard
+                  latitude={attraction.latitude}
+                  longitude={attraction.longitude}
+                  placeName={attraction.name}
+                />
               </section>
             </aside>
           </div>

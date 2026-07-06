@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import AttractionImage from '../components/explore/AttractionImage'
 import AttractionPicker from '../components/itinerary/AttractionPicker'
+import TripMapCard from '../components/itinerary/TripMapCard'
 import {
   addItineraryItem,
   fetchItinerary,
@@ -92,13 +93,29 @@ function DayItemRow({ item, dragging, onDragStart, onDragEnter, onDragEnd, onRem
 function DayWeatherChip({ weather }) {
   if (!weather) return null
   if (weather.state === 'ok') {
+    const title = [
+      weather.description || weather.condition,
+      weather.placeName ? `at ${weather.placeName}` : null,
+    ]
+      .filter(Boolean)
+      .join(' ')
     return (
       <span
         className={`it-day-weather${weather.isBad ? ' is-bad' : ''}`}
-        title={weather.description || weather.condition}
+        title={title}
       >
         <span aria-hidden="true">{weather.emoji}</span>
-        {typeof weather.temp === 'number' && <span>{Math.round(weather.temp)}°</span>}
+        {typeof weather.temp === 'number' && (
+          <span>
+            {Math.round(weather.temp)}°
+            {typeof weather.tempMin === 'number' && (
+              <span className="it-weather-lo">/{Math.round(weather.tempMin)}°</span>
+            )}
+          </span>
+        )}
+        {typeof weather.rainChance === 'number' && weather.rainChance >= 20 && (
+          <span className="it-weather-rain">💧{weather.rainChance}%</span>
+        )}
         {weather.isCurrent && <span className="it-weather-now">now</span>}
       </span>
     )
@@ -255,6 +272,8 @@ export default function ItineraryBuilder() {
           description: block.description,
           emoji: weatherEmoji(block.condition),
           temp: block.temp_max_c ?? block.temp_c ?? null,
+          tempMin: block.temp_min_c ?? null,
+          rainChance: block.rain_chance ?? null,
           isCurrent,
           placeName: first.name,
         }
@@ -493,7 +512,10 @@ export default function ItineraryBuilder() {
                       <span aria-hidden="true">⛈</span>{' '}
                       {dayW.description
                         ? dayW.description.charAt(0).toUpperCase() + dayW.description.slice(1)
-                        : 'Rain expected'}{' '}
+                        : 'Rain expected'}
+                      {typeof dayW.rainChance === 'number'
+                        ? ` (${dayW.rainChance}% chance)`
+                        : ''}{' '}
                       — best to plan indoor stops for this day.
                     </div>
                   )}
@@ -604,6 +626,8 @@ export default function ItineraryBuilder() {
               )}
             </div>
           </div>
+
+          <TripMapCard items={items} totalDays={totalDays} />
         </aside>
       </div>
 

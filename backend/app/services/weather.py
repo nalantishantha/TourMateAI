@@ -120,9 +120,13 @@ def _weather_block(entry: dict) -> tuple[str, str, str]:
 def _normalise_current(data: dict) -> dict:
     condition, description, icon = _weather_block(data)
     main = data.get("main") or {}
+    wind = data.get("wind") or {}
+    wind_ms = wind.get("speed")
     return {
         "temp_c": _round1(main.get("temp")),
         "feels_like_c": _round1(main.get("feels_like")),
+        "humidity": main.get("humidity"),
+        "wind_kmh": _round1(wind_ms * 3.6) if wind_ms is not None else None,
         "condition": condition,
         "description": description,
         "icon": icon,
@@ -137,6 +141,7 @@ def _summarise_forecast(data: dict) -> list[dict]:
     if *any* slice is bad (rain often shows in only part of the day). The
     representative condition/icon is the first bad slice when the day is bad, else
     the slice nearest midday — so the chip reflects what a traveler would plan for.
+    ``rain_chance`` is the worst slice's precipitation probability as a percent.
     """
     days: dict[str, dict] = {}
 
@@ -147,17 +152,22 @@ def _summarise_forecast(data: dict) -> list[dict]:
         date_part, time_part = stamp.split(" ", 1)
         condition, description, icon = _weather_block(entry)
         temp = (entry.get("main") or {}).get("temp")
+        pop = entry.get("pop")  # probability of precipitation, 0..1
 
         bucket = days.setdefault(
             date_part,
             {"temp_min": None, "temp_max": None, "bad_rep": None,
-             "noon_rep": None, "noon_dist": 99},
+             "noon_rep": None, "noon_dist": 99, "pop_max": None},
         )
 
         if temp is not None:
             lo, hi = bucket["temp_min"], bucket["temp_max"]
             bucket["temp_min"] = temp if lo is None else min(lo, temp)
             bucket["temp_max"] = temp if hi is None else max(hi, temp)
+
+        if pop is not None:
+            prev = bucket["pop_max"]
+            bucket["pop_max"] = pop if prev is None else max(prev, pop)
 
         block = (condition, description, icon)
         if condition in _BAD_CONDITIONS and bucket["bad_rep"] is None:
@@ -176,6 +186,7 @@ def _summarise_forecast(data: dict) -> list[dict]:
         bucket = days[date_part]
         rep = bucket["bad_rep"] or bucket["noon_rep"] or ("Unknown", "", "")
         condition, description, icon = rep
+        pop_max = bucket["pop_max"]
         result.append(
             {
                 "date": date_part,
@@ -185,6 +196,7 @@ def _summarise_forecast(data: dict) -> list[dict]:
                 "description": description,
                 "icon": icon,
                 "is_bad": bucket["bad_rep"] is not None,
+                "rain_chance": round(pop_max * 100) if pop_max is not None else None,
             }
         )
     return result

@@ -569,6 +569,9 @@
 .detail-aside {
   position: sticky;
   top: calc(var(--navbar-height) + var(--space-6));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
 }
 
 .detail-section-title {

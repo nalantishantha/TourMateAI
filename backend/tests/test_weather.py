@@ -12,19 +12,20 @@ import app.services.weather as weather_service
 
 _CURRENT = {
     "weather": [{"main": "Clear", "description": "clear sky", "icon": "01d"}],
-    "main": {"temp": 29.44, "feels_like": 31.0},
+    "main": {"temp": 29.44, "feels_like": 31.0, "humidity": 74},
+    "wind": {"speed": 5.0},  # m/s → 18 km/h
 }
 
 # Two days: 08 Jul is dry (clear/clouds), 09 Jul has a rainy afternoon slice.
 _FORECAST = {
     "list": [
-        {"dt_txt": "2026-07-08 09:00:00", "main": {"temp": 27.0},
+        {"dt_txt": "2026-07-08 09:00:00", "main": {"temp": 27.0}, "pop": 0.0,
          "weather": [{"main": "Clouds", "description": "few clouds", "icon": "02d"}]},
-        {"dt_txt": "2026-07-08 12:00:00", "main": {"temp": 31.0},
+        {"dt_txt": "2026-07-08 12:00:00", "main": {"temp": 31.0}, "pop": 0.1,
          "weather": [{"main": "Clear", "description": "clear sky", "icon": "01d"}]},
-        {"dt_txt": "2026-07-09 12:00:00", "main": {"temp": 28.0},
+        {"dt_txt": "2026-07-09 12:00:00", "main": {"temp": 28.0}, "pop": 0.35,
          "weather": [{"main": "Clouds", "description": "scattered clouds", "icon": "03d"}]},
-        {"dt_txt": "2026-07-09 15:00:00", "main": {"temp": 26.0},
+        {"dt_txt": "2026-07-09 15:00:00", "main": {"temp": 26.0}, "pop": 0.8,
          "weather": [{"main": "Rain", "description": "moderate rain", "icon": "10d"}]},
     ]
 }
@@ -61,6 +62,8 @@ def test_returns_current_and_daily_forecast(client, monkeypatch):
     assert body["current"]["condition"] == "Clear"
     assert body["current"]["is_bad"] is False
     assert body["current"]["temp_c"] == 29.4  # rounded to 1dp
+    assert body["current"]["humidity"] == 74
+    assert body["current"]["wind_kmh"] == 18.0  # 5 m/s converted
 
     # One summary per calendar day, sorted.
     dates = [d["date"] for d in body["forecast"]]
@@ -75,10 +78,12 @@ def test_bad_weather_day_is_flagged_with_min_max(client, monkeypatch):
     dry = by_date["2026-07-08"]
     assert dry["is_bad"] is False
     assert dry["temp_min_c"] == 27.0 and dry["temp_max_c"] == 31.0
+    assert dry["rain_chance"] == 10  # worst slice pop as a percent
 
     rainy = by_date["2026-07-09"]
     assert rainy["is_bad"] is True          # afternoon rain flags the whole day
     assert rainy["condition"] == "Rain"      # bad slice is the representative one
+    assert rainy["rain_chance"] == 80
 
 
 # --- Caching ----------------------------------------------------------------
