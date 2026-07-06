@@ -1,0 +1,197 @@
+/* ============================================================================
+   Profile page — preferences form, review history, liked places.
+   All values come from tokens.css; cards/inputs/buttons reuse base.css.
+   ========================================================================== */
+
+.profile-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.profile-card-head {
+  margin-bottom: var(--space-5);
+}
+
+.profile-section-title {
+  font-size: var(--text-xl);
+}
+
+.profile-section-hint {
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+/* ---- Preferences form ------------------------------------------------------ */
+
+/* Reset the native fieldset chrome so it lays out like a normal field group. */
+.profile-fieldset {
+  min-width: 0;
+  padding: 0;
+  border: none;
+}
+
+.profile-fieldset > .label {
+  padding: 0; /* legend has UA padding */
+}
+
+.profile-fieldset-hint {
+  margin-top: 0;
+  margin-bottom: var(--space-3);
+}
+
+/* Interest toggle chips — light-surface variant (the explore .chip is white-on
+   gradient; these sit on a white card). */
+.pref-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.pref-chip {
+  padding: 0.45rem var(--space-4);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition:
+    background-color var(--speed-fast) var(--ease),
+    color var(--speed-fast) var(--ease),
+    border-color var(--speed-fast) var(--ease),
+    transform var(--speed-fast) var(--ease);
+}
+
+.pref-chip:hover {
+  border-color: var(--gray-300);
+  background-color: var(--color-surface-alt);
+  transform: translateY(-1px);
+}
+
+.pref-chip.selected {
+  color: var(--color-primary-hover);
+  background-color: var(--color-primary-soft);
+  border-color: var(--color-primary);
+}
+
+.pref-chip.selected:hover {
+  background-color: var(--color-primary-tint);
+}
+
+/* Budget + pace selects side by side on wide screens. */
+.profile-selects {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--space-5);
+}
+
+.profile-selects .field {
+  margin-bottom: 0;
+}
+
+/* Give the native selects the same chevron treatment across browsers. */
+select.input {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: var(--space-10);
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236F6F6F' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-4) center;
+}
+
+.input:disabled {
+  background-color: var(--color-surface-alt);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.profile-save-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+}
+
+.profile-save-note {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.profile-card .alert {
+  margin-top: var(--space-2);
+}
+
+/* ---- Empty / loading copy -------------------------------------------------- */
+
+.profile-empty {
+  padding: var(--space-2) 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+/* ---- Review history -------------------------------------------------------- */
+
+.profile-review-list {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--space-4);
+}
+
+.profile-review-item {
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.profile-review-item:first-child {
+  padding-top: 0;
+}
+
+.profile-review-item:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.profile-review-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.profile-review-name {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+}
+
+.profile-review-name:hover {
+  color: var(--color-primary-hover);
+}
+
+.profile-review-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.profile-review-date {
+  font-size: var(--text-xs);
+  color: var(--color-text-faint);
+}
+
+.profile-review-comment {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+/* ---- Liked places ---------------------------------------------------------- */
+
+.profile-liked-grid {
+  margin-top: var(--space-4);
+  grid-template-columns: repeat(auto-fill, minmax(14.5rem, 1fr));
+}
