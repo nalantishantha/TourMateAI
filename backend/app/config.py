@@ -34,3 +34,13 @@ class Config:
         f"@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    # Route the AI features (recommend / chat / identify) to the mock stand-ins in
+    # services/ai_service.py (True) or the teammate's real AI modules (False).
+    # Keep True until those modules — and the `_real_*` branches — are wired up.
+    USE_MOCK_AI = os.environ.get("USE_MOCK_AI", "true").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
