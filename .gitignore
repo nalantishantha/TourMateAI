@@ -24,6 +24,9 @@ npm-debug.log*
 yarn-error.log*
 .vite/
 
+# ===== User uploads (landmark recognition images) =====
+backend/uploads/
+
 # ===== AI artifacts & data (large / regenerable) =====
 ai_lab/models/*
 !ai_lab/models/.gitkeep

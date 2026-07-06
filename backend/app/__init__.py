@@ -10,16 +10,20 @@ while they were unavailable — see backend/README.md ownership map).
 
 from flask import Flask, jsonify
 from flask_cors import CORS
+from werkzeug.exceptions import RequestEntityTooLarge
 
 from .ai import ai_bp
 from .config import Config
 from .extensions import db, migrate
 from .routes.attractions import attractions_bp
 from .routes.auth import auth_bp
+from .routes.chat import chat_bp
+from .routes.images import images_bp
 from .routes.interactions import interactions_bp
 from .routes.itineraries import itineraries_bp
 from .routes.recommendations import recommendations_bp
 from .routes.users import users_bp
+from .routes.weather import weather_bp
 from .seed import register_cli
 
 
@@ -39,13 +43,23 @@ def create_app(config_class=Config):
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(ai_bp, url_prefix="/api/ai")
     app.register_blueprint(attractions_bp, url_prefix="/api")
+    app.register_blueprint(chat_bp, url_prefix="/api")
+    app.register_blueprint(images_bp, url_prefix="/api")
     app.register_blueprint(interactions_bp, url_prefix="/api")
     app.register_blueprint(itineraries_bp, url_prefix="/api")
     app.register_blueprint(recommendations_bp, url_prefix="/api")
     app.register_blueprint(users_bp, url_prefix="/api/users")
+    app.register_blueprint(weather_bp, url_prefix="/api")
 
     # CLI commands (flask seed-db).
     register_cli(app)
+
+    # Oversized uploads abort during body parsing (MAX_CONTENT_LENGTH), before
+    # any route runs — translate to the shared JSON error shape here.
+    @app.errorhandler(RequestEntityTooLarge)
+    def _too_large(_exc):
+        limit_mb = app.config["MAX_CONTENT_LENGTH"] // (1024 * 1024)
+        return jsonify({"error": f"File is too large (max {limit_mb} MB)."}), 413
 
     @app.get("/health")
     def health():

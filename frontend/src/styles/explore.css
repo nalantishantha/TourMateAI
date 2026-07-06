@@ -569,6 +569,9 @@
 .detail-aside {
   position: sticky;
   top: calc(var(--navbar-height) + var(--space-6));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
 }
 
 .detail-section-title {
@@ -720,16 +723,38 @@
   border-radius: var(--radius-sm);
 }
 
-/* ---- Map placeholder ---------------------------------------------------------------------*/
+/* ---- Location map (Google Maps embed + graceful fallback) --------------------------------*/
 
-.map-placeholder {
-  position: relative;
+.detail-map {
+  margin: 0;
+}
+
+.detail-map iframe {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border: 0;
+  border-radius: var(--radius-md);
+}
+
+.detail-map-link {
+  display: inline-block;
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--color-primary-hover);
+}
+
+/* Shown when there's no Maps key or no coordinates — never a broken embed. */
+.map-fallback {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
   aspect-ratio: 4 / 3;
+  padding: var(--space-5);
+  text-align: center;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-accent-tint);
   overflow: hidden;
@@ -740,40 +765,22 @@
     repeating-linear-gradient(90deg, var(--color-accent-tint) 0 1px, transparent 1px 28px);
 }
 
-.map-pin {
-  position: relative;
+.map-fallback-pin {
   display: grid;
   place-items: center;
-  animation: pin-drop 2.4s var(--ease) infinite;
 }
 
-.map-pin::after {
-  content: '';
-  position: absolute;
-  bottom: -0.35rem;
-  width: 1.1rem;
-  height: 0.3rem;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: var(--radius-full);
-}
-
-@keyframes pin-drop {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-5px);
-  }
-}
-
-.map-placeholder-note {
+.map-fallback-note {
   padding: 0.2rem var(--space-3);
   font-size: var(--text-xs);
   font-weight: var(--weight-medium);
   color: var(--color-primary-hover);
   background-color: rgba(255, 255, 255, 0.9);
   border-radius: var(--radius-full);
+}
+
+.map-fallback-link {
+  font-size: var(--text-xs);
 }
 
 .geo-list {
