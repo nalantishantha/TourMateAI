@@ -14,7 +14,7 @@ travel help through three AI capabilities: a **content-based recommendation engi
 ```
  Tier 1: Presentation   →   frontend/     React (Vite, JavaScript)
  Tier 2: Application     →   backend/      Python Flask (modular monolith)
- Tier 3: Data            →   database/     MySQL
+ Tier 3: Data            →   MySQL         via SQLAlchemy models + Alembic migrations in backend/
 ```
 
 The Flask backend is a single deployable. AI features live inside it as a self-contained package
@@ -25,15 +25,15 @@ The Flask backend is a single deployable. AI features live inside it as a self-c
 | Path | Tier | Owner | Purpose |
 |------|------|-------|---------|
 | `frontend/` | Presentation | **Web dev** | React SPA — UI, pages, API client |
-| `backend/app/{models,routes,services}/` | Application | **Web dev** | App factory, DB models, web routes, Firebase/Maps/Weather |
+| `backend/app/{models,routes,services}/` | App / Data | **Web dev** | App factory, SQLAlchemy models (shared schema), web routes, Firebase/Maps/Weather |
+| `backend/migrations/`, `backend/app/seed.py` | Data | **Shared** | Alembic migration history + seed data |
 | `backend/app/ai/` | Application | **AI dev** | Recommendation, RAG chatbot, image recognition (Blueprint at `/api/ai/*`) |
 | `ai_lab/` | — | **AI dev** | Datasets, notebooks, training scripts, model artifacts (not shipped) |
-| `database/` | Data | **Shared** | Schema, migrations, seed data |
 | `docs/` | — | **Shared** | Proposal, API contract, architecture & schema docs |
 
 **Golden rule for collaboration:** the two sides meet **only** at (a) the JSON contracts in
 [`docs/api-contract.md`](docs/api-contract.md) and (b) the shared DB schema in
-[`database/`](database/). Don't edit across ownership boundaries without agreeing on the contract
+[`backend/app/models/`](backend/app/models/). Don't edit across ownership boundaries without agreeing on the contract
 first. Each folder has its own `README.md` with details.
 
 ## Tech stack
@@ -54,7 +54,8 @@ first. Each folder has its own `README.md` with details.
 1. `cp .env.example .env` and fill in API keys (Gemini, Google Maps, OpenWeather, Firebase, MySQL).
 2. **Backend:** see [`backend/README.md`](backend/README.md).
 3. **Frontend:** see [`frontend/README.md`](frontend/README.md).
-4. **Database:** see [`database/README.md`](database/README.md).
+4. **Database:** MySQL schema lives in `backend/app/models/`; run migrations with
+   `flask db upgrade` and seed with `flask seed-db` (see [`backend/README.md`](backend/README.md)).
 
 > The tree is scaffolded but application code is not written yet — see `plan.md` for the
 > phase-by-phase build order.

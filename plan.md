@@ -37,7 +37,7 @@ dependency-ordered plan, not a schedule.
 
 0.1 **Repo & structure**
 - Initialize git repo. Create the folder layout from `CLAUDE.md` (`frontend/`, `backend/`,
-  `ai_lab/`, `database/`).
+  `ai_lab/`). The data tier lives inside `backend/` (SQLAlchemy models + Alembic migrations).
 - Add `.gitignore` (node_modules, venv, `.env`, `ai_lab/models/*`, large datasets) and
   `.env.example`.
 
@@ -51,7 +51,8 @@ dependency-ordered plan, not a schedule.
   for chat history).
 - `Attractions` must carry the metadata the recommender needs: `type/category`, `location (lat/lng)`,
   `popularity`, `tags`, `description`. This table feeds both the recommender and the RAG KB.
-- Produce `database/schema.sql` + seed script.
+- Implement as SQLAlchemy models in `backend/app/models/`, version with Flask-Migrate
+  (`backend/migrations/`), and seed via `flask seed-db` (`backend/app/seed.py`).
 
 0.4 **API contracts (freeze these — see `CLAUDE.md`)**
 - `POST /api/ai/recommend`, `POST /api/ai/chat`, `POST /api/ai/identify` — request/response JSON.
