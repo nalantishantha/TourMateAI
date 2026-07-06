@@ -54,6 +54,10 @@ class Config:
     # keeps us comfortably inside the OpenWeather free-tier rate limit. 30 min.
     WEATHER_CACHE_TTL = int(os.environ.get("WEATHER_CACHE_TTL", "1800"))
 
+    # Same idea for computed day routes (Google Routes API). Distances between
+    # fixed attractions barely change, so 6 h keeps free-tier usage minimal.
+    ROUTE_CACHE_TTL = int(os.environ.get("ROUTE_CACHE_TTL", "21600"))
+
     # Route the AI features (recommend / chat / identify) to the mock stand-ins in
     # services/ai_service.py (True) or the teammate's real AI modules (False).
     # Keep True until those modules — and the `_real_*` branches — are wired up.

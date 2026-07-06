@@ -56,3 +56,17 @@ export async function removeItineraryItem(id, itemId) {
   const { data } = await api.delete(`/itineraries/${id}/items/${itemId}`)
   return data.deleted
 }
+
+// Driving route through one day's located stops, in their current order —
+// { route: { total_distance_m, total_duration_s, legs }, stops }. With
+// optimize: true the response adds `suggested_item_order` (located item ids
+// in Google's travel-minimising order; first/last stay fixed) and the route
+// totals describe that suggested order. 400 when the day has fewer than two
+// located stops; 503 (rejected promise) when routing is unavailable — callers
+// should catch and degrade gracefully.
+export async function fetchDayRoute(id, dayNumber, { optimize = false } = {}) {
+  const { data } = await api.get(
+    `/itineraries/${id}/days/${dayNumber}/route${optimize ? '?optimize=true' : ''}`
+  )
+  return data
+}

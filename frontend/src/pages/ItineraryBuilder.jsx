@@ -1,9 +1,12 @@
 // Itinerary Builder — plan one trip day by day. Editable title/dates up top
 // (auto-saved, with a status chip), a vertical day-by-day timeline where each
 // day takes attractions from the search picker, supports drag-to-reorder
-// within the day, and item removal. A sticky summary rail keeps the trip
-// totals in view and hosts the weather-aware suggestions button, which fetches
-// each day's forecast (from its first stop's coordinates) and flags days with
+// within the day, and item removal. Each day with 2+ located stops shows a
+// live driving route summary (total time/distance, refreshed as the order
+// changes) and, with enough stops, an "Optimize order" suggestion the user
+// can apply or dismiss. A sticky summary rail keeps the trip totals in view
+// and hosts the weather-aware suggestions button, which fetches each day's
+// forecast (from its first stop's coordinates) and flags days with
 // rain/storms so outdoor-heavy plans can be rethought.
 
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -13,6 +16,7 @@ import AttractionPicker from '../components/itinerary/AttractionPicker'
 import TripMapCard from '../components/itinerary/TripMapCard'
 import {
   addItineraryItem,
+  fetchDayRoute,
   fetchItinerary,
   removeItineraryItem,
   reorderItineraryItems,
@@ -89,6 +93,115 @@ function DayItemRow({ item, dragging, onDragStart, onDragEnter, onDragEnd, onRem
   )
 }
 
+function formatDistance(meters) {
+  if (typeof meters !== 'number') return ''
+  if (meters < 1000) return `${Math.round(meters)} m`
+  const km = meters / 1000
+  return `${km >= 100 ? Math.round(km) : km.toFixed(1)} km`
+}
+
+function formatDuration(seconds) {
+  if (typeof seconds !== 'number') return ''
+  const mins = Math.round(seconds / 60)
+  if (mins < 60) return `${mins} min`
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
+  return m ? `${h} h ${m} min` : `${h} h`
+}
+
+/** Per-day driving route summary + the optimize-order suggestion flow.
+ * Hidden entirely until a day has two located stops (no route to show). */
+function DayRouteSummary({ locatedItems, route, suggestion, onOptimize, onApply, onDismiss }) {
+  if (locatedItems.length < 2) return null
+
+  // A suggestion is only shown while the day's order still matches the one it
+  // was computed for — any reorder/add/remove silently retires it.
+  const signature = locatedItems.map((i) => i.id).join(',')
+  const live = suggestion && suggestion.signature === signature ? suggestion : null
+
+  // First/last stops stay fixed, so with < 4 stops there is nothing to reorder.
+  const canOptimize = locatedItems.length >= 4 && route?.state === 'ok'
+  const applying = live?.state === 'applying'
+  const savedSeconds =
+    live?.route && route?.state === 'ok'
+      ? route.total_duration_s - live.route.total_duration_s
+      : 0
+  const nameById = new Map(
+    locatedItems.map((i) => [i.id, i.attraction?.name || 'Attraction'])
+  )
+
+  return (
+    <div className="it-day-route-wrap">
+      <div className="it-day-route">
+        <span aria-hidden="true">🚗</span>
+        {!route || route.state === 'loading' ? (
+          <span className="it-route-text muted">Calculating route…</span>
+        ) : route.state === 'ok' ? (
+          <span className="it-route-text">
+            {formatDuration(route.total_duration_s)} ·{' '}
+            {formatDistance(route.total_distance_m)} driving between{' '}
+            {locatedItems.length} stops
+          </span>
+        ) : (
+          <span className="it-route-text muted">Route info unavailable right now</span>
+        )}
+        {canOptimize && (
+          <button
+            type="button"
+            className="it-route-optimize"
+            onClick={onOptimize}
+            disabled={live?.state === 'loading' || applying}
+          >
+            {live?.state === 'loading' ? 'Optimizing…' : 'Optimize order'}
+          </button>
+        )}
+      </div>
+
+      {live?.state === 'already-optimal' && (
+        <p className="it-route-note ok" role="status">
+          ✓ This order is already the fastest route.
+        </p>
+      )}
+      {live?.state === 'error' && (
+        <p className="it-route-note muted" role="status">
+          Couldn’t get a suggestion right now — try again later.
+        </p>
+      )}
+      {(live?.state === 'ready' || applying) && (
+        <div className="it-route-suggest" role="status">
+          <p className="it-route-suggest-title">
+            Faster order found
+            {savedSeconds > 60 ? ` — saves about ${formatDuration(savedSeconds)}` : ''}
+          </p>
+          <ol className="it-route-suggest-list">
+            {live.itemIds.map((itemId) => (
+              <li key={itemId}>{nameById.get(itemId)}</li>
+            ))}
+          </ol>
+          <div className="it-route-suggest-actions">
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={onApply}
+              disabled={applying}
+            >
+              {applying ? 'Applying…' : 'Apply this order'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={onDismiss}
+              disabled={applying}
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 /** Compact weather indicator shown in a day's header once the forecast loads. */
 function DayWeatherChip({ weather }) {
   if (!weather) return null
@@ -154,6 +267,11 @@ export default function ItineraryBuilder() {
   // Weather-aware suggestions: fetched on demand per day (keyed by day number).
   const [weatherState, setWeatherState] = useState('idle') // idle | loading | done | error
   const [dayWeather, setDayWeather] = useState({}) // { [day]: { state, ... } }
+
+  // Per-day driving routes, refreshed as a day's stop order changes.
+  const [dayRoutes, setDayRoutes] = useState({}) // { [day]: { state, total_*, legs } }
+  const routeFetchedSig = useRef({}) // { [day]: "id,id,..." } — last order fetched
+  const [routeSuggestion, setRouteSuggestion] = useState(null) // one open suggestion
 
   useEffect(() => {
     let cancelled = false
@@ -288,6 +406,122 @@ export default function ItineraryBuilder() {
   const okDays = Object.values(dayWeather).filter((w) => w.state === 'ok')
   const badDayCount = okDays.filter((w) => w.isBad).length
   const anyForecast = okDays.length > 0
+
+  // ---- Per-day driving routes -------------------------------------------------
+
+  // Only stops with coordinates can be routed; grouped per day in current order.
+  const locatedByDay = useMemo(() => {
+    const byDay = {}
+    for (const it of items) {
+      const a = it.attraction
+      if (typeof a?.latitude === 'number' && typeof a?.longitude === 'number') {
+        ;(byDay[it.day_number] ||= []).push(it)
+      }
+    }
+    return byDay
+  }, [items])
+
+  const routeSignature = useMemo(
+    () =>
+      Object.entries(locatedByDay)
+        .map(([day, list]) => `${day}:${list.map((i) => i.id).join(',')}`)
+        .join('|'),
+    [locatedByDay]
+  )
+
+  // Fresh trip → forget everything fetched for the previous one.
+  useEffect(() => {
+    routeFetchedSig.current = {}
+    setDayRoutes({})
+    setRouteSuggestion(null)
+  }, [id])
+
+  // Fetch/refresh each routable day's route whenever its stop order changes.
+  // Debounced, and paused mid-drag so we only ask once the drop settles; the
+  // backend caches per ordered stop list, so re-asking is cheap anyway.
+  useEffect(() => {
+    if (drag || !itinerary) return undefined
+    const timer = setTimeout(() => {
+      // Days that lost their route (now < 2 located stops) fall back to hidden.
+      for (const day of Object.keys(routeFetchedSig.current)) {
+        if ((locatedByDay[day] || []).length < 2) {
+          delete routeFetchedSig.current[day]
+          setDayRoutes((prev) => {
+            const next = { ...prev }
+            delete next[day]
+            return next
+          })
+        }
+      }
+      for (const [day, list] of Object.entries(locatedByDay)) {
+        if (list.length < 2) continue
+        const sig = list.map((i) => i.id).join(',')
+        if (routeFetchedSig.current[day] === sig) continue
+        routeFetchedSig.current[day] = sig
+        setDayRoutes((prev) => ({ ...prev, [day]: { state: 'loading' } }))
+        fetchDayRoute(itinerary.id, day)
+          .then((data) => {
+            if (routeFetchedSig.current[day] !== sig) return // superseded
+            setDayRoutes((prev) => ({
+              ...prev,
+              [day]: { state: 'ok', ...data.route },
+            }))
+          })
+          .catch(() => {
+            if (routeFetchedSig.current[day] !== sig) return
+            setDayRoutes((prev) => ({ ...prev, [day]: { state: 'unavailable' } }))
+          })
+      }
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [routeSignature, drag, itinerary, locatedByDay])
+
+  const handleOptimize = async (day) => {
+    const list = locatedByDay[day] || []
+    const signature = list.map((i) => i.id).join(',')
+    setRouteSuggestion({ day, state: 'loading', signature })
+    try {
+      const data = await fetchDayRoute(itinerary.id, day, { optimize: true })
+      const suggested = data.suggested_item_order || []
+      if (suggested.join(',') === signature) {
+        setRouteSuggestion({ day, state: 'already-optimal', signature })
+      } else {
+        setRouteSuggestion({
+          day,
+          state: 'ready',
+          signature,
+          itemIds: suggested,
+          route: data.route,
+        })
+      }
+    } catch {
+      setRouteSuggestion({ day, state: 'error', signature })
+    }
+  }
+
+  const applyRouteSuggestion = async () => {
+    if (!routeSuggestion?.itemIds) return
+    const { day, itemIds } = routeSuggestion
+    // The reorder endpoint wants the day's complete order — stops without
+    // coordinates weren't routed, so they keep their place at the end.
+    const unlocated = items
+      .filter((i) => i.day_number === day && !itemIds.includes(i.id))
+      .map((i) => i.id)
+    setRouteSuggestion({ ...routeSuggestion, state: 'applying' })
+    setSaveState('saving')
+    try {
+      const updated = await reorderItineraryItems(itinerary.id, day, [
+        ...itemIds,
+        ...unlocated,
+      ])
+      setItinerary(updated)
+      setRouteSuggestion(null)
+      setSaveState('saved')
+    } catch {
+      setRouteSuggestion({ ...routeSuggestion, state: 'error' })
+      setSaveState('error')
+    }
+  }
 
   // ---- Meta editing (title + dates), saved on commit ------------------------
 
@@ -539,6 +773,15 @@ export default function ItineraryBuilder() {
                       ))}
                     </div>
                   )}
+
+                  <DayRouteSummary
+                    locatedItems={locatedByDay[day] || []}
+                    route={dayRoutes[day]}
+                    suggestion={routeSuggestion?.day === day ? routeSuggestion : null}
+                    onOptimize={() => handleOptimize(day)}
+                    onApply={applyRouteSuggestion}
+                    onDismiss={() => setRouteSuggestion(null)}
+                  />
 
                   <button
                     type="button"

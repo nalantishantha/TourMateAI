@@ -18,6 +18,7 @@ Routes (registered under ``/api``):
   - ``POST   /api/itineraries/<id>/items``          auth: add an attraction to a day
   - ``PUT    /api/itineraries/<id>/items/reorder``  auth: reorder one day's items
   - ``DELETE /api/itineraries/<id>/items/<item_id>`` auth: remove an item
+  - ``GET    /api/itineraries/<id>/days/<day>/route`` auth: driving route for a day
 """
 
 from datetime import date
@@ -26,6 +27,7 @@ from flask import Blueprint, g, jsonify, request
 
 from ..extensions import db
 from ..models import Attraction, Itinerary, ItineraryItem
+from ..services.directions import DirectionsUnavailable, get_route
 from .attractions import _serialize_attraction
 from .auth import require_auth
 from .helpers import json_error
@@ -360,3 +362,69 @@ def remove_item(itinerary_id, item_id):
     db.session.delete(item)
     db.session.commit()
     return jsonify({"deleted": item_id})
+
+
+# =============================================================================
+# Day route (Google Routes API, via services/directions.py)
+# =============================================================================
+
+@itineraries_bp.get("/itineraries/<int:itinerary_id>/days/<int:day_number>/route")
+@require_auth
+def day_route(itinerary_id, day_number):
+    """Driving route through one day's stops, in their current order.
+
+    Only items whose attraction has coordinates count as stops; a day needs at
+    least two of them to have a route. With ``?optimize=true`` the response
+    also carries ``suggested_item_order`` — the day's located item ids in the
+    travel-minimising order Google suggests (first and last stops stay fixed),
+    with the route totals describing that suggested order. The suggestion is
+    never applied here; the client asks the user and uses the reorder endpoint.
+
+    Upstream/config failures come back as a friendly 503 with
+    ``{"error": ..., "available": false}``, mirroring the weather route.
+    """
+    itinerary = _get_owned_itinerary(itinerary_id)
+    if not itinerary:
+        return json_error("Itinerary not found.", 404)
+
+    stops = [
+        item
+        for item in itinerary.items
+        if item.day_number == day_number
+        and item.attraction
+        and item.attraction.latitude is not None
+        and item.attraction.longitude is not None
+    ]
+    if len(stops) < 2:
+        return json_error(
+            "This day needs at least two stops with map locations to route.", 400
+        )
+
+    optimize = (request.args.get("optimize") or "").strip().lower() in (
+        "1", "true", "yes", "on",
+    )
+
+    coords = [(s.attraction.latitude, s.attraction.longitude) for s in stops]
+    try:
+        route = get_route(coords, optimize=optimize)
+    except DirectionsUnavailable as exc:
+        # One friendly shape for every fault; the frontend falls back on it.
+        return jsonify({"error": str(exc), "available": False}), 503
+
+    optimized_order = route.pop("optimized_order", None)
+    response = {
+        "available": True,
+        "day_number": day_number,
+        "stops": [
+            {
+                "item_id": s.id,
+                "attraction_id": s.attraction_id,
+                "name": s.attraction.name,
+            }
+            for s in stops
+        ],
+        "route": route,
+    }
+    if optimized_order is not None:
+        response["suggested_item_order"] = [stops[i].id for i in optimized_order]
+    return jsonify(response)
