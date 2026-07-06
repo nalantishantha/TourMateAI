@@ -2,7 +2,9 @@
 // (auto-saved, with a status chip), a vertical day-by-day timeline where each
 // day takes attractions from the search picker, supports drag-to-reorder
 // within the day, and item removal. A sticky summary rail keeps the trip
-// totals in view and hosts the (coming-soon) weather suggestions button.
+// totals in view and hosts the weather-aware suggestions button, which fetches
+// each day's forecast (from its first stop's coordinates) and flags days with
+// rain/storms so outdoor-heavy plans can be rethought.
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
@@ -15,7 +17,9 @@ import {
   reorderItineraryItems,
   updateItinerary,
 } from '../services/itineraries'
-import { dayCount, dayDateLabel, formatTripRange } from '../utils/tripDates'
+import { fetchWeather } from '../services/weather'
+import { dayCount, dayDateLabel, dayIsoDate, formatTripRange } from '../utils/tripDates'
+import { weatherEmoji } from '../utils/weather'
 import '../styles/itinerary.css'
 
 function DragHandleIcon() {
@@ -84,6 +88,34 @@ function DayItemRow({ item, dragging, onDragStart, onDragEnter, onDragEnd, onRem
   )
 }
 
+/** Compact weather indicator shown in a day's header once the forecast loads. */
+function DayWeatherChip({ weather }) {
+  if (!weather) return null
+  if (weather.state === 'ok') {
+    return (
+      <span
+        className={`it-day-weather${weather.isBad ? ' is-bad' : ''}`}
+        title={weather.description || weather.condition}
+      >
+        <span aria-hidden="true">{weather.emoji}</span>
+        {typeof weather.temp === 'number' && <span>{Math.round(weather.temp)}°</span>}
+        {weather.isCurrent && <span className="it-weather-now">now</span>}
+      </span>
+    )
+  }
+  if (weather.state === 'out-of-range') {
+    return (
+      <span className="it-day-weather muted" title="Beyond the 5-day forecast window">
+        forecast later
+      </span>
+    )
+  }
+  if (weather.state === 'unavailable') {
+    return <span className="it-day-weather muted">weather n/a</span>
+  }
+  return null
+}
+
 export default function ItineraryBuilder() {
   const { id } = useParams()
 
@@ -101,6 +133,10 @@ export default function ItineraryBuilder() {
   const [drag, setDrag] = useState(null) // { itemId, day }
   const dragChanged = useRef(false)
   const preDragItems = useRef(null)
+
+  // Weather-aware suggestions: fetched on demand per day (keyed by day number).
+  const [weatherState, setWeatherState] = useState('idle') // idle | loading | done | error
+  const [dayWeather, setDayWeather] = useState({}) // { [day]: { state, ... } }
 
   useEffect(() => {
     let cancelled = false
@@ -146,6 +182,93 @@ export default function ItineraryBuilder() {
   const datesInvalid = Boolean(
     startDraft && endDraft && !dayCount(startDraft, endDraft)
   )
+
+  // ---- Weather-aware suggestions ---------------------------------------------
+
+  // First planned attraction per day drives that day's forecast. A change to any
+  // day's opener (or the trip's start date) invalidates a previously run check.
+  const firstStopSignature = useMemo(() => {
+    const byDay = {}
+    for (const it of items) {
+      if (byDay[it.day_number] === undefined) byDay[it.day_number] = it.attraction_id
+    }
+    return `${itinerary?.start_date || ''}|${JSON.stringify(byDay)}`
+  }, [items, itinerary])
+
+  useEffect(() => {
+    setWeatherState('idle')
+    setDayWeather({})
+  }, [firstStopSignature])
+
+  const runWeatherCheck = async () => {
+    setWeatherState('loading')
+    const results = {}
+    const byLocation = new Map() // "lat,lng" -> weather payload (or {error}) — fetch once
+    const days = Array.from({ length: totalDays }, (_, i) => i + 1)
+
+    try {
+      for (const day of days) {
+        const first = items.find((i) => i.day_number === day)?.attraction
+        if (
+          !first ||
+          typeof first.latitude !== 'number' ||
+          typeof first.longitude !== 'number'
+        ) {
+          results[day] = { state: 'no-location' }
+          continue
+        }
+
+        const key = `${first.latitude.toFixed(2)},${first.longitude.toFixed(2)}`
+        let weather = byLocation.get(key)
+        if (!weather) {
+          try {
+            weather = await fetchWeather(first.latitude, first.longitude)
+          } catch {
+            weather = { error: true }
+          }
+          byLocation.set(key, weather)
+        }
+
+        if (weather.error || weather.available === false) {
+          results[day] = { state: 'unavailable' }
+          continue
+        }
+
+        // Line the day's calendar date up against a forecast day; when the trip
+        // has no dates, fall back to current conditions as a general indicator.
+        const iso = dayIsoDate(itinerary.start_date, day)
+        let block = iso ? weather.forecast?.find((f) => f.date === iso) : null
+        let isCurrent = false
+        if (!block && !iso && weather.current) {
+          block = weather.current
+          isCurrent = true
+        }
+        if (!block) {
+          results[day] = { state: 'out-of-range' }
+          continue
+        }
+
+        results[day] = {
+          state: 'ok',
+          isBad: Boolean(block.is_bad),
+          condition: block.condition,
+          description: block.description,
+          emoji: weatherEmoji(block.condition),
+          temp: block.temp_max_c ?? block.temp_c ?? null,
+          isCurrent,
+          placeName: first.name,
+        }
+      }
+      setDayWeather(results)
+      setWeatherState('done')
+    } catch {
+      setWeatherState('error')
+    }
+  }
+
+  const okDays = Object.values(dayWeather).filter((w) => w.state === 'ok')
+  const badDayCount = okDays.filter((w) => w.isBad).length
+  const anyForecast = okDays.length > 0
 
   // ---- Meta editing (title + dates), saved on commit ------------------------
 
@@ -347,6 +470,7 @@ export default function ItineraryBuilder() {
           {dayNumbers.map((day) => {
             const dayItems = items.filter((i) => i.day_number === day)
             const dateLabel = dayDateLabel(itinerary.start_date, day)
+            const dayW = dayWeather[day]
             return (
               <section key={day} className="it-day" aria-label={`Day ${day}`}>
                 <div className="it-day-rail" aria-hidden="true">
@@ -361,7 +485,18 @@ export default function ItineraryBuilder() {
                       {dayItems.length > 0 &&
                         `${dayItems.length} place${dayItems.length === 1 ? '' : 's'}`}
                     </span>
+                    <DayWeatherChip weather={dayW} />
                   </div>
+
+                  {dayW?.state === 'ok' && dayW.isBad && (
+                    <div className="it-day-warn" role="status">
+                      <span aria-hidden="true">⛈</span>{' '}
+                      {dayW.description
+                        ? dayW.description.charAt(0).toUpperCase() + dayW.description.slice(1)
+                        : 'Rain expected'}{' '}
+                      — best to plan indoor stops for this day.
+                    </div>
+                  )}
 
                   {dayItems.length === 0 ? (
                     <div className="it-day-empty">
@@ -416,8 +551,13 @@ export default function ItineraryBuilder() {
               </div>
             </dl>
 
-            <div className="it-tooltip-wrap">
-              <button type="button" className="btn btn-secondary btn-block it-weather-btn">
+            <div className="it-weather">
+              <button
+                type="button"
+                className="btn btn-secondary btn-block it-weather-btn"
+                onClick={runWeatherCheck}
+                disabled={weatherState === 'loading'}
+              >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <circle cx="9" cy="9" r="3.5" stroke="currentColor" strokeWidth="1.7" />
                   <path
@@ -433,12 +573,35 @@ export default function ItineraryBuilder() {
                     strokeLinejoin="round"
                   />
                 </svg>
-                Get weather-aware suggestions
+                {weatherState === 'loading'
+                  ? 'Checking the forecast…'
+                  : weatherState === 'done'
+                    ? 'Refresh forecast'
+                    : 'Get weather-aware suggestions'}
               </button>
-              <span role="tooltip" className="it-tooltip">
-                Coming soon — we'll suggest the best days for beaches, hikes,
-                and city stops based on the forecast for your dates.
-              </span>
+
+              {weatherState === 'done' && (
+                <p
+                  className={`it-weather-summary ${
+                    badDayCount ? 'warn' : anyForecast ? 'ok' : ''
+                  }`}
+                  role="status"
+                >
+                  {badDayCount
+                    ? `⚠ Rain or storms forecast on ${badDayCount} day${
+                        badDayCount > 1 ? 's' : ''
+                      } — flagged in your timeline. Consider indoor stops there.`
+                    : anyForecast
+                      ? '☀ Clear conditions across your planned days.'
+                      : 'Add a place with a location to a day to see its forecast.'}
+                </p>
+              )}
+
+              {weatherState === 'error' && (
+                <p className="it-weather-summary warn" role="status">
+                  Couldn’t load the forecast right now. Please try again.
+                </p>
+              )}
             </div>
           </div>
         </aside>

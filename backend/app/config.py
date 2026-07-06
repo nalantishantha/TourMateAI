@@ -44,6 +44,16 @@ class Config:
     # in the app factory). Generous enough for phone photos.
     MAX_CONTENT_LENGTH = 8 * 1024 * 1024  # 8 MB
 
+    # ===== External API keys =====
+    # OpenWeather backs the /api/weather proxy; Google Maps is consumed by the
+    # frontend (VITE_GOOGLE_MAPS_API_KEY) but kept here too for any server-side use.
+    OPENWEATHER_API_KEY = os.environ.get("OPENWEATHER_API_KEY", "")
+    GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY", "")
+
+    # How long (seconds) a fetched weather result is reused before refetching —
+    # keeps us comfortably inside the OpenWeather free-tier rate limit. 30 min.
+    WEATHER_CACHE_TTL = int(os.environ.get("WEATHER_CACHE_TTL", "1800"))
+
     # Route the AI features (recommend / chat / identify) to the mock stand-ins in
     # services/ai_service.py (True) or the teammate's real AI modules (False).
     # Keep True until those modules — and the `_real_*` branches — are wired up.

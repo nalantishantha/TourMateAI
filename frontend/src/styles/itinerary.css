@@ -575,47 +575,60 @@
   color: var(--color-text);
 }
 
-/* Weather button + "coming soon" tooltip */
+/* Weather-aware suggestions button + result summary */
 
-.it-tooltip-wrap { position: relative; }
+.it-weather-btn svg { margin-right: var(--space-1); }
 
-.it-weather-btn { cursor: help; }
-
-.it-tooltip {
-  position: absolute;
-  bottom: calc(100% + var(--space-2));
-  left: 50%;
-  transform: translateX(-50%) translateY(4px);
-  width: 15.5rem;
-  padding: var(--space-3) var(--space-4);
+.it-weather-summary {
+  margin-top: var(--space-3);
   font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
   line-height: 1.5;
-  color: var(--color-text-inverse);
-  background-color: var(--ink-900);
+  color: var(--color-text-muted);
+}
+
+.it-weather-summary.warn { color: var(--color-danger); }
+.it-weather-summary.ok { color: var(--color-success); }
+
+/* Per-day weather chip (in the day header) + bad-weather warning banner */
+
+.it-day-weather {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: var(--space-2);
+  padding: 0.1rem var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-secondary);
+  background-color: var(--color-surface-alt);
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+.it-day-weather.is-bad {
+  color: var(--color-danger);
+  background-color: var(--color-danger-soft);
+}
+
+.it-day-weather.muted {
+  color: var(--color-text-faint);
+  font-weight: var(--weight-medium);
+}
+
+.it-weather-now {
+  color: var(--color-text-faint);
+  font-weight: var(--weight-medium);
+}
+
+.it-day-warn {
+  margin-bottom: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--color-danger);
+  background-color: var(--color-danger-soft);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
-  opacity: 0;
-  pointer-events: none;
-  transition:
-    opacity var(--speed-fast) var(--ease),
-    transform var(--speed-fast) var(--ease);
-  z-index: var(--z-dropdown);
-}
-
-.it-tooltip::after {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  border: 6px solid transparent;
-  border-top-color: var(--ink-900);
-}
-
-.it-tooltip-wrap:hover .it-tooltip,
-.it-tooltip-wrap:focus-within .it-tooltip {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
 }
 
 /* ---- Responsive --------------------------------------------------------------------------------*/

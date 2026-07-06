@@ -31,6 +31,15 @@ export function formatTripRange(startIso, endIso) {
   return `${startLabel} – ${end.toLocaleDateString(undefined, full)}`
 }
 
+/** ISO "YYYY-MM-DD" for day N (1-based) of a trip, or null without a start date.
+ *  Used to line an itinerary day up against a forecast day. */
+export function dayIsoDate(startIso, dayNumber) {
+  const start = parse(startIso)
+  if (!start || !dayNumber) return null
+  const date = new Date(start.getTime() + (dayNumber - 1) * MS_PER_DAY)
+  return date.toISOString().slice(0, 10)
+}
+
 /** "Mon, 12 Aug" for day N (1-based) of a trip, or null without a start date. */
 export function dayDateLabel(startIso, dayNumber) {
   const start = parse(startIso)

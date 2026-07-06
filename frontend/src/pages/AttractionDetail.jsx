@@ -1,12 +1,13 @@
 // Attraction detail — full-bleed image banner with name/rating overlay, then
 // a two-column layout: description + reviews (with a rating/comment form) on
-// the left, location card (map placeholder until Google Maps lands) on the
-// right. Opening the page logs a `view` interaction for the recommender.
+// the left, location card (embedded Google Map) on the right. Opening the page
+// logs a `view` interaction for the recommender.
 
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import PageContainer from '../components/layout/PageContainer'
 import AttractionImage from '../components/explore/AttractionImage'
+import AttractionMap from '../components/explore/AttractionMap'
 import StarRating from '../components/explore/StarRating'
 import {
   fetchAttraction,
@@ -278,20 +279,7 @@ export default function AttractionDetail() {
             <aside className="detail-aside">
               <section className="card card-pad">
                 <h2 className="detail-section-title">Location</h2>
-                <div className="map-placeholder" aria-label="Map preview coming soon">
-                  <span className="map-pin" aria-hidden="true">
-                    <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
-                      <path
-                        d="M12 21s-6.5-5.4-6.5-10A6.5 6.5 0 0 1 12 4.5 6.5 6.5 0 0 1 18.5 11c0 4.6-6.5 10-6.5 10Z"
-                        fill="var(--color-primary)"
-                        stroke="#fff"
-                        strokeWidth="1.4"
-                      />
-                      <circle cx="12" cy="11" r="2.3" fill="#fff" />
-                    </svg>
-                  </span>
-                  <span className="map-placeholder-note">Interactive map coming soon</span>
-                </div>
+                <AttractionMap attraction={attraction} />
                 <dl className="geo-list">
                   <div className="geo-row">
                     <dt>Latitude</dt>

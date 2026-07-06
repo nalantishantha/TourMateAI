@@ -23,6 +23,7 @@ from .routes.interactions import interactions_bp
 from .routes.itineraries import itineraries_bp
 from .routes.recommendations import recommendations_bp
 from .routes.users import users_bp
+from .routes.weather import weather_bp
 from .seed import register_cli
 
 
@@ -48,6 +49,7 @@ def create_app(config_class=Config):
     app.register_blueprint(itineraries_bp, url_prefix="/api")
     app.register_blueprint(recommendations_bp, url_prefix="/api")
     app.register_blueprint(users_bp, url_prefix="/api/users")
+    app.register_blueprint(weather_bp, url_prefix="/api")
 
     # CLI commands (flask seed-db).
     register_cli(app)
