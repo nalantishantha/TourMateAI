@@ -64,7 +64,7 @@
 
 .feature-spice .feature-icon {
   background-color: var(--color-highlight-soft);
-  color: var(--spice-600);
+  color: var(--gold-600);
 }
 
 .feature-title { margin-bottom: var(--space-2); }

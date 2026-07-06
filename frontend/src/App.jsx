@@ -5,6 +5,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute'
 import AppShell from './components/layout/AppShell'
 import Admin from './pages/Admin'
+import AttractionDetail from './pages/AttractionDetail'
 import Chat from './pages/Chat'
 import Dashboard from './pages/Dashboard'
 import Explore from './pages/Explore'
@@ -28,6 +29,7 @@ export default function App() {
       >
         <Route path="/" element={<Dashboard />} />
         <Route path="/explore" element={<Explore />} />
+        <Route path="/explore/:id" element={<AttractionDetail />} />
         <Route path="/itineraries" element={<Itineraries />} />
         <Route path="/chat" element={<Chat />} />
         <Route path="/admin" element={<Admin />} />
