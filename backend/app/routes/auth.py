@@ -24,12 +24,16 @@ auth_bp = Blueprint("auth", __name__)
 
 
 class _AuthError(Exception):
-    """Internal: carries the HTTP status + JSON body for an auth failure."""
+    """Internal: carries the HTTP status + JSON body for an auth failure.
 
-    def __init__(self, status, error, message):
+    Uses the shared single-field ``{"error": <message>}`` shape so auth failures
+    match every other endpoint's error contract (see routes/helpers.py).
+    """
+
+    def __init__(self, status, message):
         super().__init__(message)
         self.status = status
-        self.payload = {"error": error, "message": message}
+        self.payload = {"error": message}
 
 
 def _extract_bearer_token():
@@ -44,20 +48,20 @@ def _decode_token(token):
     """Verify a token, translating library errors into ``_AuthError``s."""
     if not token:
         raise _AuthError(
-            401, "missing_token", "Authorization header with a Bearer token is required."
+            401, "Authorization header with a Bearer token is required."
         )
     try:
         return verify_token(token)
     except FileNotFoundError:
         raise _AuthError(
-            503, "auth_unavailable", "Firebase credentials are not configured on the server."
+            503, "Firebase credentials are not configured on the server."
         )
     except firebase_auth.ExpiredIdTokenError:
-        raise _AuthError(401, "expired_token", "Firebase ID token has expired; sign in again.")
+        raise _AuthError(401, "Firebase ID token has expired; sign in again.")
     except (firebase_auth.RevokedIdTokenError,):
-        raise _AuthError(401, "revoked_token", "Firebase ID token has been revoked.")
+        raise _AuthError(401, "Firebase ID token has been revoked.")
     except (firebase_auth.InvalidIdTokenError, ValueError):
-        raise _AuthError(401, "invalid_token", "Invalid Firebase ID token.")
+        raise _AuthError(401, "Invalid Firebase ID token.")
 
 
 def _get_or_create_user(decoded):

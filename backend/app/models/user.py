@@ -12,7 +12,14 @@ class User(db.Model):
     name = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(255), unique=True, nullable=False, index=True)
     firebase_uid = db.Column(db.String(128), unique=True, index=True)
-    # Free-form prefs (interests[], budget, duration_days) — feeds the recommender.
+    # Travel preferences — feeds the recommendation engine. Small, stable JSON:
+    #   {
+    #     "interests": ["Beach", "Wildlife"],  # subset of Attraction.category values
+    #     "budget": "medium",                  # "low" | "medium" | "high"
+    #     "pace": "moderate"                   # "relaxed" | "moderate" | "packed"
+    #   }
+    # Written via PUT /api/users/me (validated there); any key may be absent while
+    # the profile is incomplete. See routes/users.py for the authoritative shape.
     preferences = db.Column(db.JSON)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 

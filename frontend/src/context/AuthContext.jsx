@@ -92,6 +92,9 @@ export function AuthProvider({ children }) {
   const value = {
     firebaseUser,
     user: backendUser,
+    // Let pages push a fresh user row into context (e.g. after saving the
+    // Profile) so the navbar/dashboard greeting stay in sync without a reload.
+    setUser: setBackendUser,
     loading,
     isAuthenticated: !!firebaseUser,
     signup,

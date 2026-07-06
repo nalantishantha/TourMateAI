@@ -42,7 +42,7 @@
   position: sticky;
   top: 0;
   z-index: var(--z-dropdown);
-  background-color: rgba(253, 251, 247, 0.92); /* sand-25 @ 92% */
+  background-color: rgba(255, 255, 255, 0.92); /* white @ 92% */
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--color-border-subtle);
 }
@@ -79,7 +79,7 @@
 
 .nav-link:hover {
   color: var(--color-text);
-  background-color: var(--sand-100);
+  background-color: var(--gray-50);
 }
 
 .nav-link-active,
@@ -121,7 +121,7 @@
   width: 2.375rem;
   height: 2.375rem;
   border-radius: var(--radius-full);
-  background: linear-gradient(135deg, var(--clay-500), var(--clay-700));
+  background: linear-gradient(135deg, var(--ocean-500), var(--ocean-800));
   color: var(--color-text-inverse);
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
@@ -190,7 +190,7 @@
 }
 
 .dropdown-item:hover {
-  background-color: var(--color-surface-warm);
+  background-color: var(--color-surface-alt);
   color: var(--color-text);
 }
 
@@ -212,7 +212,7 @@
   cursor: pointer;
 }
 
-.hamburger:hover { background-color: var(--sand-100); }
+.hamburger:hover { background-color: var(--gray-50); }
 
 /* ---- Mobile drawer --------------------------------------------------------- */
 
@@ -220,7 +220,7 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-overlay);
-  background-color: rgba(42, 33, 24, 0.45);
+  background-color: rgba(0, 0, 0, 0.45);
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--speed-slow) var(--ease);
@@ -272,7 +272,7 @@
 }
 
 .drawer-close:hover {
-  background-color: var(--sand-100);
+  background-color: var(--gray-50);
   color: var(--color-text);
 }
 
@@ -301,7 +301,7 @@
 }
 
 .drawer-link:hover {
-  background-color: var(--color-surface-warm);
+  background-color: var(--color-surface-alt);
   color: var(--color-text);
 }
 
@@ -344,8 +344,8 @@
 
 .footer {
   margin-top: var(--space-16);
-  background-color: var(--sand-100);
-  border-top: 1px solid var(--color-border);
+  background-color: var(--gray-50);
+  border-top: 1px solid var(--color-border-subtle);
 }
 
 .footer-inner {
