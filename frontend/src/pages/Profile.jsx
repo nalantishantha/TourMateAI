@@ -33,11 +33,73 @@ function formatDate(iso) {
   })
 }
 
+function formatMonthYear(iso) {
+  if (!iso) return null
+  return new Date(iso).toLocaleDateString(undefined, {
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
+// Up to two initials from a name for the avatar (first + last word).
+function initials(name) {
+  const parts = (name || '').trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return '?'
+  const first = parts[0][0]
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : ''
+  return (first + last).toUpperCase()
+}
+
 // Two interest arrays are "the same" if they hold the same values (order-free).
 function sameInterests(a, b) {
   if (a.length !== b.length) return false
   const set = new Set(a)
   return b.every((value) => set.has(value))
+}
+
+// ---- Identity header --------------------------------------------------------
+
+// The page's focal point: who this account belongs to, plus at-a-glance stats.
+// reviewCount is null while the feedback request is still in flight.
+function ProfileIdentity({ user, reviewCount, savedCount }) {
+  const interestCount = Array.isArray(user.preferences?.interests)
+    ? user.preferences.interests.length
+    : 0
+  const memberSince = formatMonthYear(user.created_at)
+
+  return (
+    <section className="card profile-identity">
+      <div className="profile-identity-head">
+        <div className="profile-avatar" aria-hidden="true">
+          {initials(user.name)}
+        </div>
+        <div className="profile-identity-info">
+          <h2 className="profile-identity-name">{user.name || 'Traveller'}</h2>
+          <p className="profile-identity-email">{user.email}</p>
+          {memberSince && (
+            <p className="profile-identity-since">Member since {memberSince}</p>
+          )}
+        </div>
+      </div>
+
+      <dl className="profile-stats">
+        <div className="profile-stat">
+          <dt className="profile-stat-label">Interests</dt>
+          <dd className="profile-stat-value">{interestCount}</dd>
+        </div>
+        <div className="profile-stat">
+          <dt className="profile-stat-label">Reviews</dt>
+          <dd className="profile-stat-value">
+            {reviewCount == null ? '—' : reviewCount}
+          </dd>
+        </div>
+        <div className="profile-stat">
+          <dt className="profile-stat-label">Saved</dt>
+          <dd className="profile-stat-value">{savedCount}</dd>
+        </div>
+      </dl>
+    </section>
+  )
 }
 
 // ---- Preferences form -------------------------------------------------------
@@ -259,20 +321,9 @@ function PreferencesForm({ user, onSaved }) {
 
 // ---- Review history ---------------------------------------------------------
 
-function ReviewHistory() {
-  const [reviews, setReviews] = useState(null) // null = loading
-  const [error, setError] = useState(false)
-
-  useEffect(() => {
-    let cancelled = false
-    fetchMyFeedback()
-      .then((data) => !cancelled && setReviews(data))
-      .catch(() => !cancelled && setError(true))
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
+// Reviews are fetched once at the page level (they also feed the identity
+// stat) and handed down here. `reviews === null` means still loading.
+function ReviewHistory({ reviews, error }) {
   return (
     <section className="card card-pad profile-card">
       <h2 className="profile-section-title">Your reviews</h2>
@@ -317,8 +368,7 @@ function ReviewHistory() {
 
 // ---- Liked places -----------------------------------------------------------
 
-function LikedPlaces() {
-  const { liked, toggleLike } = useLikes()
+function LikedPlaces({ liked, toggleLike }) {
   const [catalogue, setCatalogue] = useState(null) // id -> attraction
   const [error, setError] = useState(false)
 
@@ -376,6 +426,22 @@ function LikedPlaces() {
 
 export default function Profile() {
   const { user, firebaseUser, logout, setUser } = useAuth()
+  const { liked, toggleLike } = useLikes()
+
+  // Fetch the user's reviews once here — they feed both the identity stat and
+  // the review list below, so a single request keeps the two in sync.
+  const [reviews, setReviews] = useState(null) // null = loading
+  const [reviewsError, setReviewsError] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    fetchMyFeedback()
+      .then((data) => !cancelled && setReviews(data))
+      .catch(() => !cancelled && setReviewsError(true))
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   // Reseed the form's baseline after a save so "unsaved changes" clears.
   const handleSaved = (updated) => setUser(updated)
@@ -403,9 +469,14 @@ export default function Profile() {
         </div>
       ) : (
         <div className="profile-stack">
+          <ProfileIdentity
+            user={user}
+            reviewCount={reviewsError ? null : reviews?.length ?? null}
+            savedCount={liked.size}
+          />
           <PreferencesForm user={user} onSaved={handleSaved} />
-          <ReviewHistory />
-          <LikedPlaces />
+          <ReviewHistory reviews={reviews} error={reviewsError} />
+          <LikedPlaces liked={liked} toggleLike={toggleLike} />
         </div>
       )}
     </PageContainer>

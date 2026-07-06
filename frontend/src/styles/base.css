@@ -190,7 +190,7 @@ ul[role='list'], ol[role='list'] { list-style: none; padding: 0; }
 .input:focus,
 .input:focus-visible {
   outline: none;
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
 

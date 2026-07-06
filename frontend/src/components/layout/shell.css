@@ -121,7 +121,7 @@
   width: 2.375rem;
   height: 2.375rem;
   border-radius: var(--radius-full);
-  background: linear-gradient(135deg, var(--rose-500), var(--rose-700));
+  background: linear-gradient(135deg, var(--ocean-500), var(--ocean-800));
   color: var(--color-text-inverse);
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
