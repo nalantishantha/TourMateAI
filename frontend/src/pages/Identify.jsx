@@ -1,17 +1,399 @@
+// Identify a Landmark — upload a photo, watch a brief AI "scanning" pass, get
+// the recognized landmark with confidence + description, and (when the result
+// matches a catalogue attraction) jump straight to its detail page. Past
+// uploads load from UploadedImages and render as a history list below.
+//
+// The scanning phase is deliberately paced: recognition is near-instant today
+// (mock), so the result is held back until MIN_SCAN_MS has elapsed — an
+// animated scan pass reads as "the model is working" instead of a flicker.
+
+import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import PageContainer from '../components/layout/PageContainer'
-import ComingSoon from '../components/ComingSoon'
+import { fetchUploadHistory, recognizeImage, uploadedImageUrl } from '../services/images'
+import '../styles/identify.css'
+
+const MAX_FILE_MB = 8 // keep in sync with MAX_CONTENT_LENGTH in backend config.py
+const ACCEPT = 'image/jpeg,image/png,image/webp'
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+
+const MIN_SCAN_MS = 2600
+const SCAN_STEPS = [
+  'Scanning image…',
+  'Detecting landmark features…',
+  'Matching against known landmarks…',
+]
+const SCAN_STEP_MS = 900
+
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+function confidenceTone(confidence) {
+  if (confidence >= 0.75) return { tone: 'high', label: 'High confidence' }
+  if (confidence >= 0.5) return { tone: 'mid', label: 'Medium confidence' }
+  return { tone: 'low', label: 'Low confidence' }
+}
+
+/** Confidence as a labelled meter, not a bare number. */
+function ConfidenceMeter({ confidence }) {
+  const pct = Math.round((confidence || 0) * 100)
+  const { tone, label } = confidenceTone(confidence || 0)
+  return (
+    <div className="idf-confidence">
+      <div className="idf-confidence-head">
+        <span className={`idf-confidence-label idf-tone-${tone}`}>{label}</span>
+        <span className="idf-confidence-pct">{pct}%</span>
+      </div>
+      <div
+        className="idf-meter"
+        role="meter"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={pct}
+        aria-label="Recognition confidence"
+      >
+        <div className={`idf-meter-fill idf-fill-${tone}`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  )
+}
+
+function CameraIcon() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1l1.2-1.8A1.5 1.5 0 0 1 9.95 3.5h4.1a1.5 1.5 0 0 1 1.25.7L16.5 6h1A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5v-8Z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+      <circle cx="12" cy="12.5" r="3.4" stroke="currentColor" strokeWidth="1.7" />
+    </svg>
+  )
+}
+
+/** One past upload. Links to the matched attraction when there is one. */
+function HistoryItem({ item }) {
+  const pct = Math.round((item.confidence || 0) * 100)
+  const { tone } = confidenceTone(item.confidence || 0)
+  const date = item.created_at
+    ? new Date(item.created_at).toLocaleDateString(undefined, {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      })
+    : null
+
+  const body = (
+    <>
+      <img
+        className="idf-history-thumb"
+        src={uploadedImageUrl(item.image_url)}
+        alt={item.identified_name || 'Uploaded photo'}
+        loading="lazy"
+      />
+      <div className="idf-history-body">
+        <span className="idf-history-name">{item.identified_name || 'Unknown'}</span>
+        <span className="idf-history-meta">
+          <span className={`idf-history-pct idf-tone-${tone}`}>{pct}% match</span>
+          {date && (
+            <>
+              <span aria-hidden="true"> · </span>
+              {date}
+            </>
+          )}
+        </span>
+      </div>
+      {item.matched_attraction && (
+        <svg
+          className="idf-history-arrow"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="m9 6 6 6-6 6"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      )}
+    </>
+  )
+
+  if (item.matched_attraction) {
+    return (
+      <Link to={`/explore/${item.matched_attraction.id}`} className="idf-history-item idf-history-link">
+        {body}
+      </Link>
+    )
+  }
+  return <div className="idf-history-item">{body}</div>
+}
 
 export default function Identify() {
+  // idle (dropzone) -> preview (file chosen) -> scanning -> result
+  const [phase, setPhase] = useState('idle')
+  const [file, setFile] = useState(null)
+  const [previewUrl, setPreviewUrl] = useState(null)
+  const [result, setResult] = useState(null)
+  const [error, setError] = useState(null)
+  const [dragActive, setDragActive] = useState(false)
+  const [scanStep, setScanStep] = useState(0)
+
+  const [history, setHistory] = useState([])
+  const [historyLoading, setHistoryLoading] = useState(true)
+  const [historyError, setHistoryError] = useState(false)
+
+  const inputRef = useRef(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetchUploadHistory()
+      .then((items) => {
+        if (!cancelled) setHistory(items)
+      })
+      .catch(() => {
+        if (!cancelled) setHistoryError(true)
+      })
+      .finally(() => {
+        if (!cancelled) setHistoryLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // Object URLs leak unless revoked when replaced / on unmount.
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
+    }
+  }, [previewUrl])
+
+  // Cycle the status line while "analyzing" so the wait reads as progress.
+  useEffect(() => {
+    if (phase !== 'scanning') return undefined
+    setScanStep(0)
+    const timer = setInterval(
+      () => setScanStep((step) => Math.min(step + 1, SCAN_STEPS.length - 1)),
+      SCAN_STEP_MS
+    )
+    return () => clearInterval(timer)
+  }, [phase])
+
+  const selectFile = (candidate) => {
+    if (!candidate) return
+    if (!ALLOWED_TYPES.includes(candidate.type)) {
+      setError('Please choose a JPG, PNG, or WebP image.')
+      return
+    }
+    if (candidate.size > MAX_FILE_MB * 1024 * 1024) {
+      setError(`That photo is too large — the limit is ${MAX_FILE_MB} MB.`)
+      return
+    }
+    setError(null)
+    setResult(null)
+    setFile(candidate)
+    setPreviewUrl(URL.createObjectURL(candidate))
+    setPhase('preview')
+  }
+
+  const handleInputChange = (event) => {
+    selectFile(event.target.files?.[0])
+    event.target.value = '' // re-selecting the same file should still fire change
+  }
+
+  const handleDrop = (event) => {
+    event.preventDefault()
+    setDragActive(false)
+    selectFile(event.dataTransfer.files?.[0])
+  }
+
+  const handleDrag = (active) => (event) => {
+    event.preventDefault()
+    setDragActive(active)
+  }
+
+  const analyze = async () => {
+    if (!file || phase === 'scanning') return
+    setError(null)
+    setPhase('scanning')
+    try {
+      // Hold the result until the scan animation has had its moment.
+      const [data] = await Promise.all([recognizeImage(file), delay(MIN_SCAN_MS)])
+      setResult(data)
+      setHistory((prev) => [data, ...prev])
+      setPhase('result')
+    } catch (err) {
+      setError(
+        err?.response?.data?.error ||
+          "We couldn't analyze that photo. Please try again."
+      )
+      setPhase('preview')
+    }
+  }
+
+  const reset = () => {
+    setFile(null)
+    setPreviewUrl(null)
+    setResult(null)
+    setError(null)
+    setPhase('idle')
+  }
+
+  const matched = result?.matched_attraction
+
   return (
     <PageContainer
       title="Identify a landmark"
-      subtitle="Snap it, and TourMate will name it."
+      subtitle="Upload a photo and TourMate's AI will name the place."
+      width="narrow"
     >
-      <ComingSoon icon="📸" title="Landmark recognition is on its way">
-        Soon you'll be able to upload a photo of any Sri Lankan landmark and
-        get its name, history, and nearby places to visit — powered by the
-        image-recognition model we're training.
-      </ComingSoon>
+      <input
+        ref={inputRef}
+        id="idf-file-input"
+        type="file"
+        accept={ACCEPT}
+        onChange={handleInputChange}
+        hidden
+      />
+
+      {phase === 'idle' && (
+        <label
+          htmlFor="idf-file-input"
+          className={`idf-dropzone card ${dragActive ? 'idf-dropzone-active' : ''}`}
+          onDragOver={handleDrag(true)}
+          onDragLeave={handleDrag(false)}
+          onDrop={handleDrop}
+        >
+          <span className="idf-dropzone-icon">
+            <CameraIcon />
+          </span>
+          <span className="idf-dropzone-title">Drop a photo here</span>
+          <span className="idf-dropzone-sub">
+            or <span className="idf-dropzone-browse">browse your files</span> — JPG,
+            PNG, or WebP up to {MAX_FILE_MB} MB
+          </span>
+        </label>
+      )}
+
+      {phase !== 'idle' && (
+        <div className="idf-stage card">
+          <div className={`idf-frame ${phase === 'scanning' ? 'idf-frame-scanning' : ''}`}>
+            <img className="idf-preview" src={previewUrl} alt="Your uploaded photo" />
+            {phase === 'scanning' && (
+              <div className="idf-scan-overlay" aria-hidden="true">
+                <div className="idf-scan-line" />
+                <span className="idf-corner idf-corner-tl" />
+                <span className="idf-corner idf-corner-tr" />
+                <span className="idf-corner idf-corner-bl" />
+                <span className="idf-corner idf-corner-br" />
+              </div>
+            )}
+          </div>
+
+          {phase === 'preview' && (
+            <div className="idf-stage-body">
+              {error && <div className="alert alert-error">{error}</div>}
+              <div className="idf-actions">
+                <button type="button" className="btn btn-primary btn-lg" onClick={analyze}>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path
+                      d="M12 3.5 13.8 8.7l5.2 1.8-5.2 1.8L12 17.5l-1.8-5.2L5 10.5l5.2-1.8L12 3.5Z"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M18.5 15.5l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                  Identify landmark
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => inputRef.current?.click()}
+                >
+                  Choose a different photo
+                </button>
+              </div>
+            </div>
+          )}
+
+          {phase === 'scanning' && (
+            <div className="idf-stage-body idf-scanning-status" role="status">
+              <span className="idf-scan-dot" />
+              {SCAN_STEPS[scanStep]}
+            </div>
+          )}
+
+          {phase === 'result' && result && (
+            <div className="idf-stage-body idf-result">
+              <div className="idf-result-head">
+                <span className="badge badge-primary idf-result-badge">
+                  ✦ AI identification
+                </span>
+                <h2 className="idf-result-name">{result.identified_name}</h2>
+              </div>
+
+              <ConfidenceMeter confidence={result.confidence} />
+
+              {result.description && (
+                <p className="idf-result-desc">{result.description}</p>
+              )}
+
+              <div className="idf-actions">
+                {matched && (
+                  <Link to={`/explore/${matched.id}`} className="btn btn-primary">
+                    View {matched.name}
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path
+                        d="m9 6 6 6-6 6"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </Link>
+                )}
+                <button type="button" className="btn btn-secondary" onClick={reset}>
+                  Identify another photo
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <section className="idf-history" aria-label="Your previous identifications">
+        <h2 className="idf-history-title">Previous identifications</h2>
+        {historyLoading ? (
+          <div className="idf-history-state">
+            <div className="spinner" />
+          </div>
+        ) : historyError ? (
+          <div className="alert alert-error">
+            We couldn't load your previous uploads. Refresh the page to try again.
+          </div>
+        ) : history.length === 0 ? (
+          <p className="idf-history-empty">
+            Photos you identify will show up here, so you can find them again later.
+          </p>
+        ) : (
+          <div className="idf-history-list">
+            {history.map((item) => (
+              <HistoryItem key={item.id} item={item} />
+            ))}
+          </div>
+        )}
+      </section>
     </PageContainer>
   )
 }

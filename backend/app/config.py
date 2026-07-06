@@ -35,6 +35,15 @@ class Config:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    # Where user-uploaded images (landmark recognition) are stored. Local disk
+    # for the prototype; swap for cloud storage by changing this + the serving
+    # route in routes/images.py.
+    UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER") or str(_BACKEND_DIR / "uploads")
+
+    # Reject request bodies over this size (Flask returns 413 — handled as JSON
+    # in the app factory). Generous enough for phone photos.
+    MAX_CONTENT_LENGTH = 8 * 1024 * 1024  # 8 MB
+
     # Route the AI features (recommend / chat / identify) to the mock stand-ins in
     # services/ai_service.py (True) or the teammate's real AI modules (False).
     # Keep True until those modules — and the `_real_*` branches — are wired up.

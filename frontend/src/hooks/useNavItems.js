@@ -12,6 +12,7 @@ export default function useNavItems() {
     { to: '/explore', label: 'Explore' },
     { to: '/itineraries', label: 'Itineraries' },
     { to: '/chat', label: 'Chat' },
+    { to: '/identify', label: 'Identify' },
   ]
   if (user?.role === 'admin') items.push({ to: '/admin', label: 'Admin' })
   return items
