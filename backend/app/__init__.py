@@ -17,6 +17,8 @@ from .extensions import db, migrate
 from .routes.attractions import attractions_bp
 from .routes.auth import auth_bp
 from .routes.interactions import interactions_bp
+from .routes.itineraries import itineraries_bp
+from .routes.recommendations import recommendations_bp
 from .routes.users import users_bp
 from .seed import register_cli
 
@@ -38,6 +40,8 @@ def create_app(config_class=Config):
     app.register_blueprint(ai_bp, url_prefix="/api/ai")
     app.register_blueprint(attractions_bp, url_prefix="/api")
     app.register_blueprint(interactions_bp, url_prefix="/api")
+    app.register_blueprint(itineraries_bp, url_prefix="/api")
+    app.register_blueprint(recommendations_bp, url_prefix="/api")
     app.register_blueprint(users_bp, url_prefix="/api/users")
 
     # CLI commands (flask seed-db).

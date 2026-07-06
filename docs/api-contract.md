@@ -16,6 +16,13 @@ multipart). Auth: requests are expected to come from the authenticated backend c
 
 Personalized, context-aware attraction recommendations.
 
+> **Placeholder until this ships:** the Dashboard currently calls
+> `GET /api/recommendations/mock` (auth required, web-side — see
+> `backend/app/routes/recommendations.py`), which filters attractions by the
+> user's stored interests. Its items carry the same `score` + `reason` fields
+> plus full attraction data, so the frontend swap is confined to
+> `frontend/src/services/recommendations.js`.
+
 **Request**
 ```json
 {
