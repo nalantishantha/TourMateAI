@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard'
 import Explore from './pages/Explore'
 import Identify from './pages/Identify'
 import Itineraries from './pages/Itineraries'
+import ItineraryBuilder from './pages/ItineraryBuilder'
 import Login from './pages/Login'
 import Profile from './pages/Profile'
 import SignUp from './pages/SignUp'
@@ -32,6 +33,7 @@ export default function App() {
         <Route path="/explore" element={<Explore />} />
         <Route path="/explore/:id" element={<AttractionDetail />} />
         <Route path="/itineraries" element={<Itineraries />} />
+        <Route path="/itineraries/:id" element={<ItineraryBuilder />} />
         <Route path="/chat" element={<Chat />} />
         <Route path="/identify" element={<Identify />} />
         <Route path="/admin" element={<Admin />} />
