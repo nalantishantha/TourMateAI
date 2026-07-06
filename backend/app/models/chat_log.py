@@ -20,6 +20,10 @@ class ChatLog(db.Model):
     )
     message = db.Column(db.Text, nullable=False)
     response = db.Column(db.Text)  # filled in by the chatbot
+    # Attraction ids the reply suggested (list[int], may be empty/None) — kept so
+    # the Chat page can re-render the inline attraction cards when the user's
+    # conversation is reloaded from history, not just the text.
+    suggested_attractions = db.Column(db.JSON)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship("User", back_populates="chat_logs")
