@@ -10,7 +10,7 @@ import click
 from flask.cli import with_appcontext
 
 from .extensions import db
-from .models import Attraction
+from .models import Attraction, User
 
 # 15 real Sri Lankan attractions (coords are approximate decimal degrees).
 SAMPLE_ATTRACTIONS = [
@@ -136,6 +136,28 @@ def seed_db_command():
     click.echo(f"Seeded {len(SAMPLE_ATTRACTIONS)} attractions.")
 
 
+@click.command("set-admin")
+@click.argument("email")
+@click.option("--revoke", is_flag=True, help="Remove admin instead of granting it.")
+@with_appcontext
+def set_admin_command(email, revoke):
+    """Grant (or with --revoke, remove) admin rights for the user with EMAIL.
+
+        flask --app run.py set-admin you@example.com
+    """
+    user = User.query.filter_by(email=email).first()
+    if user is None:
+        raise click.ClickException(
+            f"No user with email {email!r} — they must sign in once first."
+        )
+    user.is_admin = not revoke
+    db.session.commit()
+    click.echo(
+        f"{user.email} is {'no longer' if revoke else 'now'} an admin."
+    )
+
+
 def register_cli(app):
     """Register database CLI commands on the Flask app."""
     app.cli.add_command(seed_db_command)
+    app.cli.add_command(set_admin_command)

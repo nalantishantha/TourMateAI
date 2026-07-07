@@ -100,6 +100,10 @@ def _serialize_user(user):
         "email": user.email,
         "firebase_uid": user.firebase_uid,
         "preferences": user.preferences,
+        # `role` is what the React navbar/admin gate keys on; `is_admin` is the
+        # raw column for anything that prefers the boolean.
+        "is_admin": bool(user.is_admin),
+        "role": "admin" if user.is_admin else "user",
         "created_at": user.created_at.isoformat() if user.created_at else None,
     }
 
@@ -123,6 +127,22 @@ def require_auth(f):
             return jsonify(exc.payload), exc.status
         g.firebase_uid = decoded["uid"]
         g.current_user = _get_or_create_user(decoded)
+        return f(*args, **kwargs)
+
+    return wrapper
+
+
+def require_admin(f):
+    """Protect a route for admins only: ``require_auth`` + an ``is_admin`` check.
+
+    Non-admin (but authenticated) callers get a 403 in the shared error shape.
+    """
+
+    @wraps(f)
+    @require_auth
+    def wrapper(*args, **kwargs):
+        if not g.current_user.is_admin:
+            return jsonify({"error": "Admin access required."}), 403
         return f(*args, **kwargs)
 
     return wrapper
