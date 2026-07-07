@@ -1,7 +1,7 @@
 // App routes. Public: /welcome (landing), /login, /signup. Everything else
 // renders inside the AppShell layout (navbar + footer) behind ProtectedRoute.
 
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Route, Routes } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute'
 import AppShell from './components/layout/AppShell'
 import Admin from './pages/Admin'
@@ -14,6 +14,7 @@ import Itineraries from './pages/Itineraries'
 import ItineraryBuilder from './pages/ItineraryBuilder'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
+import NotFound from './pages/NotFound'
 import Profile from './pages/Profile'
 import SignUp from './pages/SignUp'
 
@@ -40,10 +41,11 @@ export default function App() {
         <Route path="/identify" element={<Identify />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/profile" element={<Profile />} />
-      </Route>
 
-      {/* Unknown paths fall back to the protected home. */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Unknown paths render a real 404 inside the shell (navbar + footer),
+            so a lost user keeps full navigation. */}
+        <Route path="*" element={<NotFound />} />
+      </Route>
     </Routes>
   )
 }
