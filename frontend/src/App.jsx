@@ -1,5 +1,5 @@
-// App routes. Public: /login, /signup. Everything else renders inside the
-// AppShell layout (navbar + footer) behind ProtectedRoute.
+// App routes. Public: /welcome (landing), /login, /signup. Everything else
+// renders inside the AppShell layout (navbar + footer) behind ProtectedRoute.
 
 import { Navigate, Route, Routes } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -12,6 +12,7 @@ import Explore from './pages/Explore'
 import Identify from './pages/Identify'
 import Itineraries from './pages/Itineraries'
 import ItineraryBuilder from './pages/ItineraryBuilder'
+import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Profile from './pages/Profile'
 import SignUp from './pages/SignUp'
@@ -19,6 +20,7 @@ import SignUp from './pages/SignUp'
 export default function App() {
   return (
     <Routes>
+      <Route path="/welcome" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<SignUp />} />
 

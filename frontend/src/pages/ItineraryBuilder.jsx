@@ -13,6 +13,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import AttractionImage from '../components/explore/AttractionImage'
 import AttractionPicker from '../components/itinerary/AttractionPicker'
+import { attractionPhoto } from '../assets/photos'
 import TripMapCard from '../components/itinerary/TripMapCard'
 import {
   addItineraryItem,
@@ -313,6 +314,22 @@ export default function ItineraryBuilder() {
     () => new Set(items.map((i) => i.attraction_id)),
     [items]
   )
+
+  // Up to three real photos of the trip's own stops — the header's "journal
+  // cover" fan. Falls away gracefully for trips with no photographed stops.
+  const coverPhotos = useMemo(() => {
+    const photos = []
+    const seen = new Set()
+    for (const it of items) {
+      const photo = it.attraction ? attractionPhoto(it.attraction) : null
+      if (photo && !seen.has(photo.src)) {
+        seen.add(photo.src)
+        photos.push(photo)
+      }
+      if (photos.length >= 3) break
+    }
+    return photos
+  }, [items])
 
   const datesInvalid = Boolean(
     startDraft && endDraft && !dayCount(startDraft, endDraft)
@@ -667,55 +684,70 @@ export default function ItineraryBuilder() {
       </Link>
 
       <div className="it-meta card card-pad">
-        <div className="it-meta-title-row">
-          <input
-            className="it-title-input"
-            value={titleDraft}
-            onChange={(e) => setTitleDraft(e.target.value)}
-            onBlur={commitTitle}
-            onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-            maxLength={200}
-            aria-label="Trip name"
-          />
-          <span
-            className={`it-save-chip it-save-${saveState}`}
-            role="status"
-            aria-live="polite"
-          >
-            {saveState === 'saving' && 'Saving…'}
-            {saveState === 'saved' && '✓ Saved'}
-            {saveState === 'error' && "Couldn't save — retry your last change"}
-          </span>
+        <div className="it-meta-main">
+          <div className="it-meta-title-row">
+            <input
+              className="it-title-input"
+              value={titleDraft}
+              onChange={(e) => setTitleDraft(e.target.value)}
+              onBlur={commitTitle}
+              onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+              maxLength={200}
+              aria-label="Trip name"
+            />
+            <span
+              className={`it-save-chip it-save-${saveState}`}
+              role="status"
+              aria-live="polite"
+            >
+              {saveState === 'saving' && 'Saving…'}
+              {saveState === 'saved' && '✓ Saved'}
+              {saveState === 'error' && "Couldn't save — retry your last change"}
+            </span>
+          </div>
+
+          <div className="it-meta-dates">
+            <div className="it-meta-date">
+              <label className="label" htmlFor="it-start">Start</label>
+              <input
+                id="it-start"
+                className="input"
+                type="date"
+                value={startDraft}
+                onChange={(e) => commitDates(e.target.value, endDraft)}
+              />
+            </div>
+            <div className="it-meta-date">
+              <label className="label" htmlFor="it-end">End</label>
+              <input
+                id="it-end"
+                className="input"
+                type="date"
+                value={endDraft}
+                min={startDraft || undefined}
+                onChange={(e) => commitDates(startDraft, e.target.value)}
+              />
+            </div>
+            <p className={`it-days-hint ${datesInvalid ? 'it-days-hint-error' : ''}`}>
+              {datesInvalid
+                ? 'End date is before the start date — not saved yet.'
+                : `${totalDays} day${totalDays === 1 ? '' : 's'}${range ? ` · ${range}` : ''}`}
+            </p>
+          </div>
         </div>
 
-        <div className="it-meta-dates">
-          <div className="it-meta-date">
-            <label className="label" htmlFor="it-start">Start</label>
-            <input
-              id="it-start"
-              className="input"
-              type="date"
-              value={startDraft}
-              onChange={(e) => commitDates(e.target.value, endDraft)}
-            />
+        {coverPhotos.length > 0 && (
+          <div className="it-meta-photos" aria-hidden="true">
+            {coverPhotos.map((photo) => (
+              <img
+                key={photo.src}
+                src={photo.src}
+                style={{ objectPosition: photo.position }}
+                alt=""
+              />
+            ))}
           </div>
-          <div className="it-meta-date">
-            <label className="label" htmlFor="it-end">End</label>
-            <input
-              id="it-end"
-              className="input"
-              type="date"
-              value={endDraft}
-              min={startDraft || undefined}
-              onChange={(e) => commitDates(startDraft, e.target.value)}
-            />
-          </div>
-          <p className={`it-days-hint ${datesInvalid ? 'it-days-hint-error' : ''}`}>
-            {datesInvalid
-              ? 'End date is before the start date — not saved yet.'
-              : `${totalDays} day${totalDays === 1 ? '' : 's'}${range ? ` · ${range}` : ''}`}
-          </p>
-        </div>
+        )}
       </div>
 
       <div className="it-layout">

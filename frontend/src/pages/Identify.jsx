@@ -10,8 +10,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import PageContainer from '../components/layout/PageContainer'
+import AttractionImage from '../components/explore/AttractionImage'
+import { scenes } from '../assets/photos'
 import { fetchUploadHistory, recognizeImage, uploadedImageUrl } from '../services/images'
 import '../styles/identify.css'
+
+// Sample shots fanned out in the dropzone — sets expectations for what the
+// model can name.
+const EXAMPLE_SCENES = [scenes.sigiriyaGround, scenes.nineArch, scenes.templeOfTooth]
 
 const MAX_FILE_MB = 8 // keep in sync with MAX_CONTENT_LENGTH in backend config.py
 const ACCEPT = 'image/jpeg,image/png,image/webp'
@@ -270,8 +276,19 @@ export default function Identify() {
           onDragLeave={handleDrag(false)}
           onDrop={handleDrop}
         >
-          <span className="idf-dropzone-icon">
-            <CameraIcon />
+          <span className="idf-examples" aria-hidden="true">
+            {EXAMPLE_SCENES.map((scene) => (
+              <img
+                key={scene.src}
+                className="idf-example"
+                src={scene.src}
+                style={{ objectPosition: scene.position }}
+                alt=""
+              />
+            ))}
+            <span className="idf-examples-icon">
+              <CameraIcon />
+            </span>
           </span>
           <span className="idf-dropzone-title">Drop a photo here</span>
           <span className="idf-dropzone-sub">
@@ -327,9 +344,32 @@ export default function Identify() {
           )}
 
           {phase === 'scanning' && (
-            <div className="idf-stage-body idf-scanning-status" role="status">
-              <span className="idf-scan-dot" />
-              {SCAN_STEPS[scanStep]}
+            <div className="idf-stage-body idf-scan-steps" role="status">
+              {SCAN_STEPS.map((step, i) => (
+                <span
+                  key={step}
+                  className={`idf-scan-step${
+                    i < scanStep ? ' is-done' : i === scanStep ? ' is-current' : ''
+                  }`}
+                >
+                  <span className="idf-scan-step-icon" aria-hidden="true">
+                    {i < scanStep ? (
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                        <path
+                          d="m5 12 5 5 9-10"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    ) : (
+                      <span className="idf-scan-dot" />
+                    )}
+                  </span>
+                  {step}
+                </span>
+              ))}
             </div>
           )}
 
@@ -348,21 +388,36 @@ export default function Identify() {
                 <p className="idf-result-desc">{result.description}</p>
               )}
 
+              {matched && (
+                <Link to={`/explore/${matched.id}`} className="idf-match">
+                  <AttractionImage attraction={matched} className="idf-match-img" />
+                  <span className="idf-match-body">
+                    <span className="idf-match-kicker">In the catalogue</span>
+                    <span className="idf-match-name">{matched.name}</span>
+                    <span className="idf-match-meta">
+                      {matched.category} · tap for details, map & weather
+                    </span>
+                  </span>
+                  <svg
+                    className="idf-match-arrow"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="m9 6 6 6-6 6"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </Link>
+              )}
+
               <div className="idf-actions">
-                {matched && (
-                  <Link to={`/explore/${matched.id}`} className="btn btn-primary">
-                    View {matched.name}
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path
-                        d="m9 6 6 6-6 6"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </Link>
-                )}
                 <button type="button" className="btn btn-secondary" onClick={reset}>
                   Identify another photo
                 </button>

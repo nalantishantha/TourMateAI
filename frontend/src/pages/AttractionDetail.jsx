@@ -235,12 +235,12 @@ export default function AttractionDetail() {
 
           <div className="detail-layout">
             <div className="detail-main">
-              <section className="card card-pad">
+              <section className="detail-about">
                 <h2 className="detail-section-title">About this place</h2>
                 <p className="detail-description">{attraction.description}</p>
               </section>
 
-              <section className="card card-pad">
+              <section className="detail-reviews">
                 <h2 className="detail-section-title">Traveler feedback</h2>
 
                 {attraction.reviews.length === 0 ? (
@@ -278,8 +278,12 @@ export default function AttractionDetail() {
             </div>
 
             <aside className="detail-aside">
-              <section className="card card-pad">
-                <h2 className="detail-section-title">Location</h2>
+              {/* Map sits flush inside its card so the embed reads as part of
+                  the layout, not a bolted-on widget. */}
+              <section className="card detail-map-card">
+                <div className="detail-map-head">
+                  <h2 className="detail-section-title">Location</h2>
+                </div>
                 <AttractionMap attraction={attraction} />
                 <dl className="geo-list">
                   <div className="geo-row">

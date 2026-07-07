@@ -1,7 +1,10 @@
-// Attraction imagery. Uses the real `image_url` when the row has one;
-// otherwise renders a stock-style SVG landscape tinted per category, with the
-// sun position and ridge shape varied per attraction id so a grid of
-// placeholders doesn't look copy-pasted.
+// Attraction imagery, in order of preference: a bundled real photo matched by
+// name/category (assets/photos.js), then the row's `image_url`, then a
+// stock-style SVG landscape tinted per category, with the sun position and
+// ridge shape varied per attraction id so a grid of placeholders doesn't look
+// copy-pasted.
+
+import { attractionPhoto } from '../../assets/photos'
 
 const THEMES = {
   heritage: { sky: ['#F6C68B', '#FBEADC'], far: '#C97B4A', near: '#9E3D22', sun: '#E8794A' },
@@ -30,6 +33,19 @@ const RIDGES = [
 ]
 
 export default function AttractionImage({ attraction, className = '' }) {
+  const photo = attractionPhoto(attraction)
+  if (photo) {
+    return (
+      <img
+        src={photo.src}
+        alt={attraction.name}
+        className={className}
+        style={{ objectPosition: photo.position }}
+        loading="lazy"
+      />
+    )
+  }
+
   if (attraction.image_url) {
     return (
       <img

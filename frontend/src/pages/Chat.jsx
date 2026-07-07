@@ -5,16 +5,18 @@
 
 import { useEffect, useRef, useState } from 'react'
 import ChatMessage, { BotAvatar, TypingIndicator } from '../components/chat/ChatMessage'
+import { scenes } from '../assets/photos'
 import { clearChatHistory, fetchChatHistory, sendChatMessage } from '../services/chat'
 import '../styles/chat.css'
 
 // Starter chips for an empty conversation — phrased to hit the assistant's
-// strong suits (each maps onto a mock-chatbot rule today).
+// strong suits (each maps onto a mock-chatbot rule today). The photo thumbs
+// match the Explore filter chips so the whole app speaks one language.
 const QUICK_PROMPTS = [
-  'What are the best beaches?',
-  'Where can I see elephants and leopards?',
-  'Which heritage sites should I not miss?',
-  'When is the best season to visit?',
+  { text: 'What are the best beaches?', scene: scenes.hikkaduwaBeach },
+  { text: 'Where can I see elephants and leopards?', scene: scenes.leopard },
+  { text: 'Which heritage sites should I not miss?', scene: scenes.sigiriyaGround },
+  { text: 'When is the best season to visit?', scene: scenes.stiltFishing },
 ]
 
 const COMPOSER_MAX_HEIGHT = 132 // px — ~4 lines before the textarea scrolls
@@ -200,14 +202,21 @@ export default function Chat() {
                 </div>
               )}
               <div className="chat-prompts">
-                {QUICK_PROMPTS.map((prompt) => (
+                {QUICK_PROMPTS.map(({ text, scene }) => (
                   <button
-                    key={prompt}
+                    key={text}
                     type="button"
                     className="chat-prompt"
-                    onClick={() => send(prompt)}
+                    onClick={() => send(text)}
                   >
-                    {prompt}
+                    <img
+                      className="chat-prompt-thumb"
+                      src={scene.src}
+                      style={{ objectPosition: scene.position }}
+                      alt=""
+                      aria-hidden="true"
+                    />
+                    {text}
                   </button>
                 ))}
               </div>

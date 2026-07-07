@@ -1,10 +1,10 @@
-// One attraction card in the Explore grid: image with category badge + like
-// heart, then name / stars / description snippet. The whole card links to the
-// detail page; the heart intercepts the click and logs a `like` interaction.
+// One attraction card in the Explore grid: photo with category badge + like
+// heart, then a name/rating row and a description snippet. The whole card
+// links to the detail page; the heart intercepts the click and logs a `like`
+// interaction.
 
 import { Link } from 'react-router-dom'
 import AttractionImage from './AttractionImage'
-import StarRating from './StarRating'
 
 function HeartIcon({ filled }) {
   return (
@@ -49,26 +49,16 @@ export default function AttractionCard({ attraction, liked, onToggleLike, index 
       </div>
 
       <div className="attraction-card-body">
-        <h3 className="attraction-card-name">{attraction.name}</h3>
-        <div className="rating-line">
-          <StarRating value={attraction.avg_rating} />
-          <span className="rating-value">
+        <div className="attraction-card-head">
+          <h3 className="attraction-card-name">{attraction.name}</h3>
+          <span className="rating-inline">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8-6.1-3.5-6.1 3.5 1.4-6.8L2.2 9.1l6.9-.8L12 2z" />
+            </svg>
             {attraction.avg_rating ? attraction.avg_rating.toFixed(1) : 'New'}
           </span>
         </div>
         <p className="attraction-card-desc">{attraction.description}</p>
-        <span className="attraction-card-cta" aria-hidden="true">
-          View details
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M5 12h14m0 0-6-6m6 6-6 6"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </span>
       </div>
     </Link>
   )

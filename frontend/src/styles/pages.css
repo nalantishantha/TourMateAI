@@ -25,68 +25,8 @@
   color: var(--color-text-muted);
 }
 
-.feature-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-  gap: var(--space-6);
-}
-
-.feature-card {
-  display: flex;
-  flex-direction: column;
-  padding: var(--space-8) var(--space-6);
-  color: inherit;
-}
-
-.feature-card:hover { color: inherit; }
-
-.feature-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 3rem;
-  height: 3rem;
-  margin-bottom: var(--space-5);
-  border-radius: var(--radius-md);
-}
-
-.feature-icon svg { width: 1.5rem; height: 1.5rem; }
-
-.feature-clay .feature-icon {
-  background-color: var(--color-primary-soft);
-  color: var(--color-primary-hover);
-}
-
-.feature-ocean .feature-icon {
-  background-color: var(--color-accent-soft);
-  color: var(--color-accent);
-}
-
-.feature-spice .feature-icon {
-  background-color: var(--color-highlight-soft);
-  color: var(--gold-600);
-}
-
-.feature-title { margin-bottom: var(--space-2); }
-
-.feature-desc {
-  flex: 1;
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-}
-
-.feature-cta {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-top: var(--space-6);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--color-primary-hover);
-  transition: gap var(--speed-fast) var(--ease);
-}
-
-.feature-card:hover .feature-cta { gap: var(--space-3); }
+/* (The old home feature-card styles moved to landing.css, which owns the
+   .feature-* classes now.) */
 
 /* ---- Coming-soon empty state -------------------------------------------------*/
 

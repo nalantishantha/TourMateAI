@@ -1,17 +1,19 @@
-// Dashboard — the authenticated home. Welcome hero, quick actions into the
-// three AI features, then three data sections:
+// Dashboard — the authenticated home, laid out like a curated travel magazine:
+// a time-of-day photo hero, quick actions into the three AI features, then
+// three data sections:
 //   - Recommended for you  → GET /api/recommendations/mock (placeholder until
 //                            the real engine lands; see services/recommendations.js)
-//   - Continue planning    → GET /api/itineraries
-//   - Trending attractions → GET /api/attractions?sort=rating
+//                            First pick runs as the "lead story", rest support.
+//   - Continue planning    → GET /api/itineraries (rows with photo thumbnails)
+//   - Trending attractions → GET /api/attractions?sort=rating (ranked tiles)
 // Each section loads independently so one failure never blanks the page.
 
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import PageContainer from '../components/layout/PageContainer'
-import AttractionCard, { AttractionCardSkeleton } from '../components/explore/AttractionCard'
-import useLikes from '../hooks/useLikes'
+import AttractionImage from '../components/explore/AttractionImage'
+import { attractionPhoto, scenes } from '../assets/photos'
 import { fetchAttractions } from '../services/attractions'
 import { fetchItineraries } from '../services/itineraries'
 import { fetchRecommendations } from '../services/recommendations'
@@ -20,6 +22,20 @@ import '../styles/explore.css'
 import '../styles/dashboard.css'
 
 const SECTION_SIZE = 4
+
+// The hero photo follows the clock — the app's whole pitch is context-aware.
+function heroSceneForHour(hour) {
+  if (hour >= 5 && hour < 11) return scenes.sigiriyaAerial
+  if (hour >= 11 && hour < 16) return scenes.nineArch
+  if (hour >= 16 && hour < 19) return scenes.stiltFishing
+  return scenes.galleLighthouse
+}
+
+function greetingForHour(hour) {
+  if (hour >= 5 && hour < 12) return 'Good morning'
+  if (hour >= 12 && hour < 17) return 'Good afternoon'
+  return 'Good evening'
+}
 
 const QUICK_ACTIONS = [
   {
@@ -96,11 +112,25 @@ function DashSection({ title, hint, linkTo, linkLabel, children }) {
   )
 }
 
-function CardGridSkeleton() {
+// Skeletons that mirror the editorial layouts they stand in for.
+function RecSkeleton() {
   return (
-    <div className="attraction-grid dash-grid" aria-busy="true">
+    <div className="rec-editorial" aria-busy="true">
+      <div className="skeleton rec-feature-skeleton" />
+      <div className="rec-side">
+        {Array.from({ length: 3 }, (_, i) => (
+          <div key={i} className="skeleton rec-mini-skeleton" />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function TrendSkeleton() {
+  return (
+    <div className="trend-row" aria-busy="true">
       {Array.from({ length: SECTION_SIZE }, (_, i) => (
-        <AttractionCardSkeleton key={i} />
+        <div key={i} className="skeleton trend-skeleton" />
       ))}
     </div>
   )
@@ -124,7 +154,13 @@ export default function Dashboard() {
   const name = user?.name || firebaseUser?.email?.split('@')[0] || 'traveler'
   const hasInterests = (user?.preferences?.interests || []).length > 0
 
-  const { liked, toggleLike } = useLikes()
+  const hour = new Date().getHours()
+  const heroScene = heroSceneForHour(hour)
+  const today = new Date().toLocaleDateString(undefined, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  })
 
   // Per-section state: null = loading, [] = loaded empty, 'error' = failed.
   const [recommended, setRecommended] = useState(null)
@@ -154,14 +190,24 @@ export default function Dashboard() {
 
   return (
     <PageContainer>
-      <section className="home-hero dash-hero">
-        <span className="badge badge-primary">Sri Lanka · AI travel companion</span>
-        <h1 className="home-greeting">
-          Welcome back, <span className="home-name">{name}</span>.
-        </h1>
-        <p className="home-lead">
-          Here's what the island has lined up for you today.
-        </p>
+      <section className="dash-hero">
+        <img
+          className="dash-hero-photo"
+          src={heroScene.src}
+          style={{ objectPosition: heroScene.position }}
+          alt=""
+          aria-hidden="true"
+        />
+        <div className="dash-hero-scrim" aria-hidden="true" />
+        <div className="dash-hero-content">
+          <span className="dash-hero-date">{today}</span>
+          <h1 className="dash-greeting">
+            {greetingForHour(hour)}, <span className="dash-name">{name}</span>.
+          </h1>
+          <p className="dash-lead">
+            Here's what the island has lined up for you today.
+          </p>
+        </div>
       </section>
 
       <section className="qa-row" aria-label="Quick actions">
@@ -190,7 +236,7 @@ export default function Dashboard() {
         linkLabel="Tune your interests"
       >
         {recommended === null ? (
-          <CardGridSkeleton />
+          <RecSkeleton />
         ) : recommended === 'error' ? (
           <SectionError>Couldn't load recommendations right now.</SectionError>
         ) : recommended.length === 0 ? (
@@ -198,20 +244,42 @@ export default function Dashboard() {
             Nothing to recommend yet — the catalogue may still be empty.
           </p>
         ) : (
-          <div className="attraction-grid dash-grid">
-            {recommended.map((rec, i) => (
-              <div key={rec.id} className="rec-cell">
-                <AttractionCard
-                  attraction={rec}
-                  index={i}
-                  liked={liked.has(rec.id)}
-                  onToggleLike={toggleLike}
-                />
-                <span className="rec-reason">
-                  <span aria-hidden="true">✦</span> {rec.reason}
-                </span>
+          <div className="rec-editorial">
+            {/* Lead story: the top pick runs big, caption over the photo. */}
+            <Link to={`/explore/${recommended[0].id}`} className="rec-feature">
+              <AttractionImage
+                attraction={recommended[0]}
+                className="rec-feature-img"
+              />
+              <div className="rec-feature-scrim" aria-hidden="true" />
+              <div className="rec-feature-caption">
+                <span className="media-badge">{recommended[0].category}</span>
+                <h3 className="rec-feature-name">{recommended[0].name}</h3>
+                {recommended[0].reason && (
+                  <p className="rec-feature-reason">
+                    <span aria-hidden="true">✦</span> {recommended[0].reason}
+                  </p>
+                )}
               </div>
-            ))}
+            </Link>
+
+            {/* Supporting picks: compact photo rows. */}
+            <div className="rec-side">
+              {recommended.slice(1).map((rec) => (
+                <Link key={rec.id} to={`/explore/${rec.id}`} className="rec-mini">
+                  <AttractionImage attraction={rec} className="rec-mini-img" />
+                  <span className="rec-mini-text">
+                    <span className="rec-mini-name">{rec.name}</span>
+                    {rec.reason && (
+                      <span className="rec-mini-reason">{rec.reason}</span>
+                    )}
+                  </span>
+                  <span className="rec-mini-arrow" aria-hidden="true">
+                    <ArrowIcon />
+                  </span>
+                </Link>
+              ))}
+            </div>
           </div>
         )}
       </DashSection>
@@ -241,24 +309,40 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="itinerary-row-list">
-            {itineraries.map((it) => (
-              <Link key={it.id} to="/itineraries" className="card card-hover itinerary-row">
-                <span className="itinerary-row-icon" aria-hidden="true">🗺️</span>
-                <span className="itinerary-row-text">
-                  <span className="itinerary-row-title">{it.title}</span>
-                  <span className="itinerary-row-meta">
-                    {formatDates(it)} · {it.item_count}{' '}
-                    {it.item_count === 1 ? 'place' : 'places'}
-                    {it.preview_stops.length > 0 && (
-                      <> · {it.preview_stops.join(' · ')}</>
-                    )}
+            {itineraries.map((it) => {
+              // First stop that has a bundled photo becomes the trip thumbnail.
+              const thumb = (it.preview_stops || [])
+                .map((stop) => attractionPhoto({ name: stop }))
+                .find(Boolean)
+              return (
+                <Link key={it.id} to="/itineraries" className="card card-hover itinerary-row">
+                  {thumb ? (
+                    <img
+                      className="itinerary-row-thumb"
+                      src={thumb.src}
+                      style={{ objectPosition: thumb.position }}
+                      alt=""
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <span className="itinerary-row-icon" aria-hidden="true">🗺️</span>
+                  )}
+                  <span className="itinerary-row-text">
+                    <span className="itinerary-row-title">{it.title}</span>
+                    <span className="itinerary-row-meta">
+                      {formatDates(it)} · {it.item_count}{' '}
+                      {it.item_count === 1 ? 'place' : 'places'}
+                      {it.preview_stops.length > 0 && (
+                        <> · {it.preview_stops.join(' · ')}</>
+                      )}
+                    </span>
                   </span>
-                </span>
-                <span className="itinerary-row-arrow" aria-hidden="true">
-                  <ArrowIcon />
-                </span>
-              </Link>
-            ))}
+                  <span className="itinerary-row-arrow" aria-hidden="true">
+                    <ArrowIcon />
+                  </span>
+                </Link>
+              )
+            })}
           </div>
         )}
       </DashSection>
@@ -270,21 +354,37 @@ export default function Dashboard() {
         linkLabel="Explore all"
       >
         {trending === null ? (
-          <CardGridSkeleton />
+          <TrendSkeleton />
         ) : trending === 'error' ? (
           <SectionError>Couldn't load trending attractions right now.</SectionError>
         ) : trending.length === 0 ? (
           <p className="dash-section-error">No attractions in the catalogue yet.</p>
         ) : (
-          <div className="attraction-grid dash-grid">
+          <div className="trend-row">
             {trending.map((attraction, i) => (
-              <AttractionCard
+              <Link
                 key={attraction.id}
-                attraction={attraction}
-                index={i}
-                liked={liked.has(attraction.id)}
-                onToggleLike={toggleLike}
-              />
+                to={`/explore/${attraction.id}`}
+                className="trend-card"
+                style={{ animationDelay: `${i * 60}ms` }}
+              >
+                <AttractionImage attraction={attraction} className="trend-img" />
+                <div className="trend-scrim" aria-hidden="true" />
+                <span className="trend-rank" aria-hidden="true">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="trend-label">
+                  <span className="trend-name">{attraction.name}</span>
+                  <span className="trend-meta">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8-6.1-3.5-6.1 3.5 1.4-6.8L2.2 9.1l6.9-.8L12 2z" />
+                    </svg>
+                    {attraction.avg_rating ? attraction.avg_rating.toFixed(1) : 'New'}
+                    {' · '}
+                    {attraction.category}
+                  </span>
+                </span>
+              </Link>
             ))}
           </div>
         )}
