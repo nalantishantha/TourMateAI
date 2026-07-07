@@ -60,12 +60,6 @@
   z-index: 1;
 }
 
-/* All-white brand mark so it reads over the photo. */
-.auth-brand-panel .logo-word,
-.auth-brand-panel .logo-ai { color: #FFFFFF; }
-.auth-brand-panel .logo svg circle { stroke: #FFFFFF; }
-.auth-brand-panel .logo svg path { fill: #FFFFFF; }
-
 .auth-brand-copy {
   position: relative;
   z-index: 1;
