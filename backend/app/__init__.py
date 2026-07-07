@@ -15,6 +15,7 @@ from werkzeug.exceptions import RequestEntityTooLarge
 from .ai import ai_bp
 from .config import Config
 from .extensions import db, migrate
+from .routes.admin import admin_bp
 from .routes.attractions import attractions_bp
 from .routes.auth import auth_bp
 from .routes.chat import chat_bp
@@ -41,6 +42,7 @@ def create_app(config_class=Config):
 
     # Blueprints.
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
+    app.register_blueprint(admin_bp, url_prefix="/api/admin")
     app.register_blueprint(ai_bp, url_prefix="/api/ai")
     app.register_blueprint(attractions_bp, url_prefix="/api")
     app.register_blueprint(chat_bp, url_prefix="/api")

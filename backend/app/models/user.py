@@ -12,6 +12,11 @@ class User(db.Model):
     name = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(255), unique=True, nullable=False, index=True)
     firebase_uid = db.Column(db.String(128), unique=True, index=True)
+    # Admin flag — gates the /api/admin/* endpoints and the React admin portal.
+    # Flipped manually (flask set-admin <email>); there is no self-serve path.
+    is_admin = db.Column(
+        db.Boolean, nullable=False, default=False, server_default=db.text("0")
+    )
     # Travel preferences — feeds the recommendation engine. Small, stable JSON:
     #   {
     #     "interests": ["Beach", "Wildlife"],  # subset of Attraction.category values

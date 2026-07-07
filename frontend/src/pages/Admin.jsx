@@ -1,30 +1,55 @@
+// Admin dashboard — only for users with role === 'admin' (backend Users.is_admin).
+// Everyone else is bounced to the home page; the navbar link is already hidden
+// for them (see hooks/useNavItems.js). Three panels behind a segmented tab bar:
+// analytics overview, attraction management (CRUD), and the user list.
+
+import { useState } from 'react'
+import { Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import PageContainer from '../components/layout/PageContainer'
-import ComingSoon from '../components/ComingSoon'
+import OverviewPanel from '../components/admin/OverviewPanel'
+import AttractionsPanel from '../components/admin/AttractionsPanel'
+import UsersPanel from '../components/admin/UsersPanel'
+import '../styles/admin.css'
+
+const TABS = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'attractions', label: 'Attractions' },
+  { id: 'users', label: 'Users' },
+]
 
 export default function Admin() {
   const { user } = useAuth()
+  const [tab, setTab] = useState('overview')
 
-  // Mirrors the navbar rule: the backend doesn't return `role` yet, so this
-  // renders the not-authorized state for everyone until it does.
+  // ProtectedRoute guarantees auth already resolved; non-admins go home.
   if (user?.role !== 'admin') {
-    return (
-      <PageContainer title="Admin" width="narrow">
-        <div className="alert alert-error" role="alert">
-          You don't have access to the admin portal.
-        </div>
-      </PageContainer>
-    )
+    return <Navigate to="/" replace />
   }
 
   return (
     <PageContainer
       title="Admin"
-      subtitle="Manage attractions, users, and content."
+      subtitle="Manage the attraction catalogue, users, and see how TourMate is used."
     >
-      <ComingSoon icon="🛠️" title="Admin portal coming soon">
-        Attraction management, user overview, and content tools will live here.
-      </ComingSoon>
+      <div className="adm-tabs" role="tablist" aria-label="Admin sections">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.id}
+            className="adm-tab"
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'overview' && <OverviewPanel />}
+      {tab === 'attractions' && <AttractionsPanel />}
+      {tab === 'users' && <UsersPanel />}
     </PageContainer>
   )
 }

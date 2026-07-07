@@ -65,6 +65,8 @@ def _serialize_user(user):
         "email": user.email,
         "firebase_uid": user.firebase_uid,
         "preferences": user.preferences,
+        "is_admin": bool(user.is_admin),
+        "role": "admin" if user.is_admin else "user",
         "created_at": user.created_at.isoformat() if user.created_at else None,
     }
 
