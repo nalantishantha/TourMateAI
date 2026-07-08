@@ -1146,7 +1146,7 @@ export default function ItineraryBuilder() {
             </div>
           </div>
 
-          <TripMapCard items={items} totalDays={totalDays} />
+          <TripMapCard items={items} totalDays={totalDays} routes={dayRoutes} />
         </aside>
       </div>
 

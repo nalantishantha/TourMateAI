@@ -1245,6 +1245,28 @@
   border-radius: var(--radius-md);
 }
 
+/* Day travel total + the "route from my location" prompt, under the map. */
+.it-map-total {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.it-map-total strong { color: var(--color-text-primary); }
+.it-map-total.muted { color: var(--color-text-muted); }
+
+.it-map-fromme { margin-top: var(--space-3); }
+
+.it-map-geo-note {
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
 .it-map-stops {
   display: flex;
   flex-direction: column;
@@ -1253,6 +1275,26 @@
   padding: 0;
   list-style: none;
 }
+
+/* Per-leg drive time, sitting between two numbered stops. The short vertical
+   line ties it to the stop above so the sequence reads as a route. */
+.it-map-leg {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: 0.6rem; /* centres the connector under the stop numbers */
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+
+.it-map-leg-line {
+  flex-shrink: 0;
+  width: 1px;
+  height: 0.9rem;
+  background-color: var(--color-border);
+}
+
+.it-map-leg-text { white-space: nowrap; }
 
 .it-map-stop {
   display: flex;
