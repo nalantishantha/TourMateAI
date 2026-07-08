@@ -10,7 +10,7 @@ import { fetchAttractions } from '../../services/attractions'
 const SEARCH_DEBOUNCE_MS = 300
 const RESULTS_PER_PAGE = 8
 
-export default function AttractionPicker({ dayNumber, plannedIds, onAdd, onClose }) {
+export default function AttractionPicker({ dayNumber, dateLabel, plannedIds, onAdd, onClose }) {
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
@@ -20,6 +20,7 @@ export default function AttractionPicker({ dayNumber, plannedIds, onAdd, onClose
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState(false)
   const [addingId, setAddingId] = useState(null)
+  const [justAddedId, setJustAddedId] = useState(null) // brief "✓ Added" flash
   const inputRef = useRef(null)
 
   useEffect(() => {
@@ -75,6 +76,14 @@ export default function AttractionPicker({ dayNumber, plannedIds, onAdd, onClose
     setAddingId(attraction.id)
     try {
       await onAdd(attraction)
+      // Confirm the add in place — the modal stays open for the next one.
+      setJustAddedId(attraction.id)
+      setTimeout(
+        () => setJustAddedId((id) => (id === attraction.id ? null : id)),
+        1500
+      )
+    } catch {
+      // The builder already surfaces the failure via its save-status chip.
     } finally {
       setAddingId(null)
     }
@@ -90,7 +99,10 @@ export default function AttractionPicker({ dayNumber, plannedIds, onAdd, onClose
         onClick={(e) => e.stopPropagation()}
       >
         <div className="it-modal-head">
-          <h2 id="picker-title">Add to day {dayNumber}</h2>
+          <h2 id="picker-title">
+            Add to Day {dayNumber}
+            {dateLabel && <span className="it-picker-date"> · {dateLabel}</span>}
+          </h2>
           <button type="button" className="it-modal-close" onClick={onClose} aria-label="Close">
             ✕
           </button>
@@ -120,6 +132,7 @@ export default function AttractionPicker({ dayNumber, plannedIds, onAdd, onClose
           ) : (
             results.map((attraction) => {
               const planned = plannedIds.has(attraction.id)
+              const justAdded = justAddedId === attraction.id
               return (
                 <div key={attraction.id} className="it-picker-row">
                   <div className="it-picker-thumb">
@@ -134,11 +147,19 @@ export default function AttractionPicker({ dayNumber, plannedIds, onAdd, onClose
                   </div>
                   <button
                     type="button"
-                    className={`btn ${planned ? 'btn-ghost' : 'btn-secondary'} it-picker-add`}
+                    className={`btn ${planned ? 'btn-ghost' : 'btn-secondary'} it-picker-add${
+                      justAdded ? ' is-added' : ''
+                    }`}
                     onClick={() => handleAdd(attraction)}
-                    disabled={addingId === attraction.id}
+                    disabled={addingId === attraction.id || justAdded}
                   >
-                    {addingId === attraction.id ? 'Adding…' : planned ? '+ Add again' : '+ Add'}
+                    {addingId === attraction.id
+                      ? 'Adding…'
+                      : justAdded
+                        ? '✓ Added'
+                        : planned
+                          ? '+ Add again'
+                          : '+ Add'}
                   </button>
                 </div>
               )
