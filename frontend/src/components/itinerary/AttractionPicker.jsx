@@ -13,8 +13,11 @@ const RESULTS_PER_PAGE = 8
 export default function AttractionPicker({ dayNumber, plannedIds, onAdd, onClose }) {
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
   const [results, setResults] = useState([])
+  const [pagination, setPagination] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState(false)
   const [addingId, setAddingId] = useState(null)
   const inputRef = useRef(null)
@@ -33,28 +36,39 @@ export default function AttractionPicker({ dayNumber, plannedIds, onAdd, onClose
   }, [onClose])
 
   useEffect(() => {
-    const timer = setTimeout(() => setSearch(searchInput.trim()), SEARCH_DEBOUNCE_MS)
+    const timer = setTimeout(() => {
+      setSearch(searchInput.trim())
+      setPage(1)
+    }, SEARCH_DEBOUNCE_MS)
     return () => clearTimeout(timer)
   }, [searchInput])
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
+    if (page === 1) setLoading(true)
+    else setLoadingMore(true)
     setError(false)
-    fetchAttractions({ search, sort: 'rating', perPage: RESULTS_PER_PAGE })
+    fetchAttractions({ search, sort: 'rating', page, perPage: RESULTS_PER_PAGE })
       .then((data) => {
-        if (!cancelled) setResults(data.attractions)
+        if (cancelled) return
+        setResults((prev) => (page === 1 ? data.attractions : [...prev, ...data.attractions]))
+        setPagination(data.pagination)
       })
       .catch(() => {
         if (!cancelled) setError(true)
       })
       .finally(() => {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) {
+          setLoading(false)
+          setLoadingMore(false)
+        }
       })
     return () => {
       cancelled = true
     }
-  }, [search])
+  }, [search, page])
+
+  const hasMore = pagination && pagination.page < pagination.total_pages
 
   const handleAdd = async (attraction) => {
     if (addingId) return
@@ -129,6 +143,18 @@ export default function AttractionPicker({ dayNumber, plannedIds, onAdd, onClose
                 </div>
               )
             })
+          )}
+          {hasMore && (
+            <div className="it-picker-more">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => setPage((p) => p + 1)}
+                disabled={loadingMore}
+              >
+                {loadingMore ? 'Loading…' : 'Load more places'}
+              </button>
+            </div>
           )}
         </div>
 

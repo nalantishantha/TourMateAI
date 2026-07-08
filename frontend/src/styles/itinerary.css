@@ -291,6 +291,12 @@
   padding: 0.4rem var(--space-3);
 }
 
+.it-picker-more {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--space-2);
+}
+
 .it-picker-hint {
   margin-top: var(--space-3);
   font-size: var(--text-xs);

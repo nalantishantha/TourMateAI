@@ -119,6 +119,48 @@ SAMPLE_ATTRACTIONS = [
         "longitude": 80.3849,
         "description": "A sanctuary caring for orphaned and injured elephants, known for its river bathing.",
     },
+    {
+        "name": "Hikkaduwa Beach",
+        "category": "Beach",
+        "latitude": 6.1395,
+        "longitude": 80.1063,
+        "description": "A south-coast beach town famed for its coral reef, sea turtles and surf breaks.",
+    },
+    {
+        "name": "Blue Beach Island, Nilwella",
+        "category": "Beach",
+        "latitude": 5.9700,
+        "longitude": 80.6900,
+        "description": "A quiet lagoon-side stretch near Nilwella with a small island just offshore, popular for swimming and snorkelling.",
+    },
+    {
+        "name": "Knuckles Mountain Range",
+        "category": "Hiking",
+        "latitude": 7.4667,
+        "longitude": 80.7833,
+        "description": "A UNESCO-listed massif of cloud forest and jagged peaks named for its knuckle-like ridgeline, laced with trekking trails.",
+    },
+    {
+        "name": "Ella Rock",
+        "category": "Hiking",
+        "latitude": 6.8613,
+        "longitude": 81.0464,
+        "description": "A hill-country summit above Ella reached by a scenic trail through tea estates, with panoramic valley views at the top.",
+    },
+    {
+        "name": "Haritha Kanda (Green Mountain), Bopaththalawa",
+        "category": "Hiking",
+        "latitude": 7.0333,
+        "longitude": 80.6667,
+        "description": "A lush highland peak near Bopaththalawa in tea country, known for a steep climb and sweeping views over the plantations.",
+    },
+    {
+        "name": "Wilpaththu National Park",
+        "category": "Wildlife",
+        "latitude": 8.4630,
+        "longitude": 80.0308,
+        "description": "Sri Lanka's largest national park, a wilderness of dense scrub and 'willus' (natural lakes) known for leopards and sloth bears.",
+    },
 ]
 
 

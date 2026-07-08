@@ -24,6 +24,14 @@ import stiltFishingSrc from './Sri Lanka Travel – Stilt Fishing at Sunset on t
 import hikkaduwaBeachSrc from './Hikkaduwa_beach.jpg'
 import hikkaduwaCoralSrc from './Hikkaduwa_coral.jpg'
 import hikkaduwaDivingSrc from './Hikkaduwa_diving.jpg'
+import blueBeachIslandSrc from './𝐁𝐥𝐮𝐞 𝐁𝐞𝐚𝐜𝐡 𝐈𝐬𝐥𝐚𝐧𝐝, 𝐍𝐢𝐥𝐰𝐞𝐥𝐥i.jpeg'
+import knucklesRangeSrc from './Knuckles Mountain Range.jpeg'
+import ellaRockSrc from './Ella Rock - Ella, SriLanka.jpeg'
+import harithaKandaSrc from './Haritha kanda or Green Mountain - Bopaththalawa, SriLanka.jpeg'
+import hortonPlainsSrc from './horton_pains.webp'
+import wilpattuSrc from './Wilpaththu National Park.jpeg'
+import polonnaruwaSrc from './Polonnaruwa, Sri Lanka.jpeg'
+import anuradhapuraSrc from './Anuradhapura.jpeg'
 
 /** Named, hand-cropped scenes for editorial use (heroes, feature tiles). */
 export const scenes = {
@@ -118,6 +126,46 @@ export const scenes = {
     position: '50% 50%',
     alt: 'Diving over a reef at Hikkaduwa',
   },
+  blueBeachIsland: {
+    src: blueBeachIslandSrc,
+    position: '50% 50%',
+    alt: 'Blue Beach Island at Nilwella',
+  },
+  knucklesRange: {
+    src: knucklesRangeSrc,
+    position: '50% 45%',
+    alt: 'The jagged peaks of the Knuckles Mountain Range',
+  },
+  ellaRock: {
+    src: ellaRockSrc,
+    position: '50% 45%',
+    alt: 'The view from the summit of Ella Rock',
+  },
+  harithaKanda: {
+    src: harithaKandaSrc,
+    position: '50% 45%',
+    alt: 'Haritha Kanda (Green Mountain) above Bopaththalawa',
+  },
+  hortonPlains: {
+    src: hortonPlainsSrc,
+    position: '50% 50%',
+    alt: "Misty grassland at Horton Plains, near World's End",
+  },
+  wilpattu: {
+    src: wilpattuSrc,
+    position: '50% 50%',
+    alt: 'A watering hole in Wilpattu National Park',
+  },
+  polonnaruwa: {
+    src: polonnaruwaSrc,
+    position: '50% 50%',
+    alt: 'Ancient ruins of the medieval capital, Polonnaruwa',
+  },
+  anuradhapura: {
+    src: anuradhapuraSrc,
+    position: '50% 50%',
+    alt: 'The sacred dagobas of Anuradhapura',
+  },
 }
 
 /* Name → photo rules, first match wins. Substring patterns are deliberately
@@ -136,16 +184,24 @@ const NAME_RULES = [
   [/whale/, scenes.whaleWatching],
   [/mirissa|coconut tree/, scenes.coconutTreeHill],
   [/unawatuna|hikkaduwa|bentota|arugam/, scenes.hikkaduwaBeach],
+  [/blue beach|nilwella|nilweli/, scenes.blueBeachIsland],
   [/trincomalee|nilaveli|pigeon island/, scenes.hikkaduwaCoral],
   [/pinnawala|elephant|udawalawe|minneriya/, scenes.elephant],
+  [/wilpattu|wilpaththu/, scenes.wilpattu],
+  [/knuckles/, scenes.knucklesRange],
+  [/ella rock/, scenes.ellaRock],
+  [/haritha kanda|green mountain|bopath/, scenes.harithaKanda],
   [/\bella\b/, scenes.nineArch],
+  [/horton/, scenes.hortonPlains],
+  [/polonnaruwa/, scenes.polonnaruwa],
+  [/anuradhapura/, scenes.anuradhapura],
   [/stilt|koggala/, scenes.stiltFishing],
 ]
 
 /* Generic (non-landmark) shots reused for unmatched rows of a category —
    a real beach photo on an unmatched beach beats a drawn placeholder. Only
-   categories with genuinely generic imagery get a pool; heritage cities
-   (Anuradhapura, Polonnaruwa…) keep the existing image_url/SVG fallback
+   categories with genuinely generic imagery get a pool; other heritage
+   sites without a bundled photo keep the existing image_url/SVG fallback
    rather than wearing another landmark's photo. */
 const CATEGORY_POOLS = {
   beach: [scenes.hikkaduwaBeach, scenes.hikkaduwaCoral, scenes.hikkaduwaDiving],
