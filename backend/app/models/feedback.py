@@ -23,6 +23,13 @@ class Feedback(db.Model):
     )
     rating = db.Column(db.Integer, nullable=False)  # 1–5
     comment = db.Column(db.Text)
+    # Moderation flag set from the admin feedback-moderation view. Hidden reviews
+    # are kept (not deleted) for audit; the admin UI toggles this. Wiring it into
+    # the public attraction reviews/average is a deliberate follow-up — the admin
+    # pass doesn't change traveler-facing behaviour.
+    is_hidden = db.Column(
+        db.Boolean, nullable=False, default=False, server_default=db.text("0")
+    )
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship("User", back_populates="feedback")
