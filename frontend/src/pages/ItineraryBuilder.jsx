@@ -245,43 +245,74 @@ function DayRouteSummary({ locatedItems, route, suggestion, onOptimize, onApply,
   )
 }
 
-/** Weather, as part of the day's at-a-glance line (not a status badge). */
+/** Coarse condition family, used only to tint the weather chip so days are
+ *  scannable at a glance (sunny warm, rainy blue, cloudy neutral…). */
+function weatherGroup(condition) {
+  if (condition === 'Clear') return 'clear'
+  if (condition === 'Clouds') return 'cloud'
+  if (condition === 'Rain' || condition === 'Drizzle') return 'rain'
+  if (condition === 'Thunderstorm') return 'storm'
+  if (condition === 'Snow') return 'snow'
+  if (['Mist', 'Fog', 'Haze', 'Smoke', 'Dust'].includes(condition)) return 'mist'
+  return 'default'
+}
+
+/** Weather, as part of the day's at-a-glance line — a compact, tinted chip. */
 function DayGlanceWeather({ weather }) {
   if (!weather) return null
   if (weather.state === 'ok') {
+    const label = weather.description || weather.condition || ''
     const title = [
-      weather.description || weather.condition,
+      label,
       weather.placeName ? `at ${weather.placeName}` : null,
     ]
       .filter(Boolean)
       .join(' ')
+    const showRain =
+      typeof weather.rainChance === 'number' && weather.rainChance >= 20
     return (
-      <span className={`it-glance-weather${weather.isBad ? ' is-bad' : ''}`} title={title}>
-        <span aria-hidden="true">{weather.emoji}</span>
-        {typeof weather.temp === 'number' && (
-          <span>
-            {Math.round(weather.temp)}°
-            {typeof weather.tempMin === 'number' && (
-              <span className="it-weather-lo">/{Math.round(weather.tempMin)}°</span>
-            )}
+      <span
+        className={`it-weather-chip${weather.isBad ? ' is-bad' : ''}`}
+        data-cond={weatherGroup(weather.condition)}
+        title={title}
+      >
+        <span className="it-weather-chip-icon" aria-hidden="true">
+          {weather.emoji}
+        </span>
+        <span className="it-weather-chip-temp">
+          {typeof weather.temp === 'number' ? `${Math.round(weather.temp)}°` : '—'}
+          {typeof weather.tempMin === 'number' && (
+            <span className="it-weather-chip-lo">{Math.round(weather.tempMin)}°</span>
+          )}
+        </span>
+        {showRain && (
+          <span className="it-weather-chip-rain">
+            <span aria-hidden="true">💧</span>
+            {weather.rainChance}%
           </span>
         )}
-        {typeof weather.rainChance === 'number' && weather.rainChance >= 20 && (
-          <span className="it-weather-rain">💧{weather.rainChance}%</span>
-        )}
-        {weather.isCurrent && <span className="it-weather-now">now</span>}
+        {weather.isCurrent && <span className="it-weather-chip-now">Now</span>}
       </span>
     )
   }
   if (weather.state === 'out-of-range') {
     return (
-      <span className="it-glance-weather muted" title="Beyond the 5-day forecast window">
-        forecast later
+      <span
+        className="it-weather-chip is-muted"
+        title="Beyond the 5-day forecast window"
+      >
+        <span className="it-weather-chip-icon" aria-hidden="true">🗓️</span>
+        <span className="it-weather-chip-note">Forecast later</span>
       </span>
     )
   }
   if (weather.state === 'unavailable') {
-    return <span className="it-glance-weather muted">weather n/a</span>
+    return (
+      <span className="it-weather-chip is-muted">
+        <span className="it-weather-chip-icon" aria-hidden="true">🌡️</span>
+        <span className="it-weather-chip-note">Weather n/a</span>
+      </span>
+    )
   }
   return null
 }
