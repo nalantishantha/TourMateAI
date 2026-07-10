@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import PageContainer from '../components/layout/PageContainer'
+import { attractionPhoto } from '../assets/photos'
 import {
   createItinerary,
   deleteItinerary,
@@ -131,9 +132,25 @@ function NewTripModal({ onClose }) {
   )
 }
 
+/** Real photos of the trip's own stops, matched by name — the card's cover. */
+function tripCoverPhotos(previewStops, max = 3) {
+  const photos = []
+  const seen = new Set()
+  for (const name of previewStops) {
+    const photo = attractionPhoto({ name })
+    if (photo && !seen.has(photo.src)) {
+      seen.add(photo.src)
+      photos.push(photo)
+    }
+    if (photos.length >= max) break
+  }
+  return photos
+}
+
 function TripCard({ itinerary, onDelete }) {
   const days = dayCount(itinerary.start_date, itinerary.end_date)
   const range = formatTripRange(itinerary.start_date, itinerary.end_date)
+  const covers = tripCoverPhotos(itinerary.preview_stops)
 
   const handleDelete = (event) => {
     event.preventDefault()
@@ -143,58 +160,76 @@ function TripCard({ itinerary, onDelete }) {
 
   return (
     <Link to={`/itineraries/${itinerary.id}`} className="trip-card card card-hover">
-      <div className="trip-card-top">
-        <div className="trip-card-badges">
-          {days && <span className="badge badge-primary">{days} day{days === 1 ? '' : 's'}</span>}
-          <span className="badge">
-            {itinerary.item_count} place{itinerary.item_count === 1 ? '' : 's'}
-          </span>
+      <div className="trip-card-photos" aria-hidden="true">
+        {covers.length > 0 ? (
+          covers.map((photo) => (
+            <img
+              key={photo.src}
+              src={photo.src}
+              style={{ objectPosition: photo.position }}
+              alt=""
+              loading="lazy"
+            />
+          ))
+        ) : (
+          <span className="trip-card-photos-empty">🧭</span>
+        )}
+      </div>
+
+      <div className="trip-card-body">
+        <div className="trip-card-top">
+          <div className="trip-card-badges">
+            {days && <span className="badge badge-primary">{days} day{days === 1 ? '' : 's'}</span>}
+            <span className="badge">
+              {itinerary.item_count} place{itinerary.item_count === 1 ? '' : 's'}
+            </span>
+          </div>
+          <button
+            type="button"
+            className="trip-card-delete"
+            onClick={handleDelete}
+            aria-label={`Delete ${itinerary.title}`}
+            title="Delete trip"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0 1 13h8l1-13"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
         </div>
-        <button
-          type="button"
-          className="trip-card-delete"
-          onClick={handleDelete}
-          aria-label={`Delete ${itinerary.title}`}
-          title="Delete trip"
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+
+        <h3 className="trip-card-title">{itinerary.title}</h3>
+        {range && <p className="trip-card-range">{range}</p>}
+
+        {itinerary.preview_stops.length > 0 ? (
+          <p className="trip-card-stops">
+            {itinerary.preview_stops.join(' · ')}
+            {itinerary.item_count > itinerary.preview_stops.length && ' · …'}
+          </p>
+        ) : (
+          <p className="trip-card-stops trip-card-stops-empty">
+            Nothing planned yet — tap to start adding places.
+          </p>
+        )}
+
+        <span className="trip-card-cta" aria-hidden="true">
+          Open planner
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
             <path
-              d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0 1 13h8l1-13"
+              d="M5 12h14m0 0-6-6m6 6-6 6"
               stroke="currentColor"
-              strokeWidth="1.8"
+              strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
           </svg>
-        </button>
+        </span>
       </div>
-
-      <h3 className="trip-card-title">{itinerary.title}</h3>
-      {range && <p className="trip-card-range">{range}</p>}
-
-      {itinerary.preview_stops.length > 0 ? (
-        <p className="trip-card-stops">
-          {itinerary.preview_stops.join(' · ')}
-          {itinerary.item_count > itinerary.preview_stops.length && ' · …'}
-        </p>
-      ) : (
-        <p className="trip-card-stops trip-card-stops-empty">
-          Nothing planned yet — tap to start adding places.
-        </p>
-      )}
-
-      <span className="trip-card-cta" aria-hidden="true">
-        Open planner
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M5 12h14m0 0-6-6m6 6-6 6"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </span>
     </Link>
   )
 }

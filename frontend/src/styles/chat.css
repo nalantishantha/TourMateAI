@@ -89,7 +89,11 @@
   height: 1.6rem;
 }
 
-.chat-welcome h2 { font-size: var(--text-xl); }
+.chat-welcome h2 {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.01em;
+}
 
 .chat-welcome p {
   max-width: 26rem;
@@ -112,7 +116,10 @@
 }
 
 .chat-prompt {
-  padding: var(--space-2) var(--space-4);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.3rem var(--space-4) 0.3rem 0.3rem;
   font-family: var(--font-body);
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
@@ -120,17 +127,28 @@
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
+  box-shadow: var(--shadow-xs);
   cursor: pointer;
   transition:
     border-color var(--speed-fast) var(--ease),
     background-color var(--speed-fast) var(--ease),
-    color var(--speed-fast) var(--ease);
+    color var(--speed-fast) var(--ease),
+    transform var(--speed-fast) var(--ease),
+    box-shadow var(--speed-fast) var(--ease);
+}
+
+.chat-prompt-thumb {
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: var(--radius-full);
+  object-fit: cover;
 }
 
 .chat-prompt:hover {
-  background-color: var(--color-primary-soft);
   border-color: var(--color-primary-tint);
   color: var(--color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
 /* ---- Message rows + bubbles ------------------------------------------------ */
@@ -186,13 +204,13 @@
 .chat-msg-assistant .chat-bubble {
   background-color: var(--color-surface-alt);
   color: var(--color-text);
-  border-radius: 18px 18px 18px 4px;
+  border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) 4px;
 }
 
 .chat-msg-user .chat-bubble {
   background-color: var(--color-primary);
   color: var(--color-text-inverse);
-  border-radius: 18px 18px 4px 18px;
+  border-radius: var(--radius-lg) var(--radius-lg) 4px var(--radius-lg);
 }
 
 .chat-msg-user .chat-bubble-failed {
@@ -265,7 +283,7 @@
   flex-direction: column;
   gap: var(--space-2);
   margin-top: var(--space-2);
-  width: min(21rem, 100%);
+  width: min(24rem, 100%);
 }
 
 .chat-suggestion {
@@ -293,7 +311,7 @@
 
 .chat-suggestion-thumb {
   flex-shrink: 0;
-  width: 3.25rem;
+  width: 4rem;
   height: 3.25rem;
   border-radius: var(--radius-sm);
   overflow: hidden;

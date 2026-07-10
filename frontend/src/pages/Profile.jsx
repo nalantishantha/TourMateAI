@@ -11,6 +11,7 @@ import { Link } from 'react-router-dom'
 import PageContainer from '../components/layout/PageContainer'
 import AttractionCard from '../components/explore/AttractionCard'
 import StarRating from '../components/explore/StarRating'
+import { categoryScene } from '../assets/photos'
 import { useAuth } from '../context/AuthContext'
 import useLikes from '../hooks/useLikes'
 import { fetchAttractions } from '../services/attractions'
@@ -55,6 +56,25 @@ function sameInterests(a, b) {
   if (a.length !== b.length) return false
   const set = new Set(a)
   return b.every((value) => set.has(value))
+}
+
+// Price-tier glyph and pace emoji for the option cards — one glanceable cue
+// per option, in the same spirit as the weather/route emoji elsewhere.
+const BUDGET_GLYPHS = { low: '$', medium: '$$', high: '$$$' }
+const PACE_EMOJI = { relaxed: '🌴', moderate: '🚶', packed: '⚡' }
+
+function CheckIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="m5 12 5 5 9-10"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
 }
 
 // ---- Identity header --------------------------------------------------------
@@ -237,6 +257,7 @@ function PreferencesForm({ user, onSaved }) {
         <div className="pref-chips" role="group" aria-label="Travel interests">
           {INTERESTS.map((interest) => {
             const selected = interests.includes(interest)
+            const scene = categoryScene(interest)
             return (
               <button
                 key={interest}
@@ -245,58 +266,83 @@ function PreferencesForm({ user, onSaved }) {
                 aria-pressed={selected}
                 onClick={() => toggleInterest(interest)}
               >
+                {scene && (
+                  <img
+                    className="pref-chip-photo"
+                    src={scene.src}
+                    style={{ objectPosition: scene.position }}
+                    alt=""
+                    loading="lazy"
+                  />
+                )}
                 {interest}
+                <span className="pref-chip-check" aria-hidden="true">
+                  <CheckIcon />
+                </span>
               </button>
             )
           })}
         </div>
       </fieldset>
 
-      <div className="profile-selects">
-        <div className="field">
-          <label className="label" htmlFor="profile-budget">
-            Budget
-          </label>
-          <select
-            id="profile-budget"
-            className="input"
-            value={budget}
-            onChange={(e) => {
-              setBudget(e.target.value)
-              touch()
-            }}
-          >
-            <option value="">No preference</option>
-            {BUDGET_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+      <fieldset className="field profile-fieldset">
+        <legend className="label">Budget</legend>
+        <p className="hint profile-fieldset-hint">
+          Tap a selected option again to clear it.
+        </p>
+        <div className="pref-seg" role="group" aria-label="Budget">
+          {BUDGET_OPTIONS.map((opt) => {
+            const selected = budget === opt.value
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                className={`pref-option pref-seg-option${selected ? ' selected' : ''}`}
+                aria-pressed={selected}
+                onClick={() => {
+                  setBudget(selected ? '' : opt.value)
+                  touch()
+                }}
+              >
+                <span className="pref-option-glyph" aria-hidden="true">
+                  {BUDGET_GLYPHS[opt.value]}
+                </span>
+                <span className="pref-option-title">{opt.label}</span>
+              </button>
+            )
+          })}
         </div>
+      </fieldset>
 
-        <div className="field">
-          <label className="label" htmlFor="profile-pace">
-            Trip pace
-          </label>
-          <select
-            id="profile-pace"
-            className="input"
-            value={pace}
-            onChange={(e) => {
-              setPace(e.target.value)
-              touch()
-            }}
-          >
-            <option value="">No preference</option>
-            {PACE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+      <fieldset className="field profile-fieldset">
+        <legend className="label">Trip pace</legend>
+        <div className="pref-cards" role="group" aria-label="Trip pace">
+          {PACE_OPTIONS.map((opt) => {
+            const selected = pace === opt.value
+            const [title, description] = opt.label.split(' — ')
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                className={`pref-option pref-card-option${selected ? ' selected' : ''}`}
+                aria-pressed={selected}
+                onClick={() => {
+                  setPace(selected ? '' : opt.value)
+                  touch()
+                }}
+              >
+                <span className="pref-option-glyph" aria-hidden="true">
+                  {PACE_EMOJI[opt.value]}
+                </span>
+                <span className="pref-option-title">{title}</span>
+                {description && (
+                  <span className="pref-option-desc">{description}</span>
+                )}
+              </button>
+            )
+          })}
         </div>
-      </div>
+      </fieldset>
 
       {error && <div className="alert alert-error">{error}</div>}
       {saved && !error && (

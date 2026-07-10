@@ -1,6 +1,6 @@
-// Explore — the main discovery page. A brand-gradient hero with live search
-// and category chips sits over a responsive grid of attraction cards, with
-// skeleton loading, an empty state, and load-more pagination.
+// Explore — the main discovery page. A full-width photo hero with live search
+// and photo-thumbnail category chips sits over a responsive grid of attraction
+// cards, with skeleton loading, an empty state, and load-more pagination.
 //
 // Data: GET /api/attractions (search/category/sort/page). Category chips are
 // derived once from the first unfiltered load so they cover whatever is seeded.
@@ -10,6 +10,7 @@ import PageContainer from '../components/layout/PageContainer'
 import AttractionCard, { AttractionCardSkeleton } from '../components/explore/AttractionCard'
 import useLikes from '../hooks/useLikes'
 import { fetchAttractions } from '../services/attractions'
+import { categoryScene, scenes } from '../assets/photos'
 import '../styles/explore.css'
 
 const PER_PAGE = 24
@@ -106,6 +107,15 @@ export default function Explore() {
   return (
     <PageContainer>
       <section className="explore-hero">
+        {/* Wider crop than the shared scene position: keep the summit in frame. */}
+        <img
+          className="explore-hero-photo"
+          src={scenes.sigiriyaAerial.src}
+          style={{ objectPosition: '50% 32%' }}
+          alt=""
+          aria-hidden="true"
+        />
+        <div className="explore-hero-scrim" aria-hidden="true" />
         <span className="explore-hero-kicker">Discover Sri Lanka</span>
         <h1 className="explore-hero-title">Where will the island take you?</h1>
         <p className="explore-hero-sub">
@@ -144,16 +154,28 @@ export default function Explore() {
           >
             All
           </button>
-          {categories.map((c) => (
-            <button
-              key={c}
-              type="button"
-              className={`chip${category === c ? ' chip-active' : ''}`}
-              onClick={() => pickCategory(c)}
-            >
-              {c}
-            </button>
-          ))}
+          {categories.map((c) => {
+            const thumb = categoryScene(c)
+            return (
+              <button
+                key={c}
+                type="button"
+                className={`chip${category === c ? ' chip-active' : ''}`}
+                onClick={() => pickCategory(c)}
+              >
+                {thumb && (
+                  <img
+                    className="chip-thumb"
+                    src={thumb.src}
+                    style={{ objectPosition: thumb.position }}
+                    alt=""
+                    aria-hidden="true"
+                  />
+                )}
+                {c}
+              </button>
+            )
+          })}
         </div>
       </section>
 

@@ -1,18 +1,20 @@
-// Itinerary Builder — plan one trip day by day. Editable title/dates up top
-// (auto-saved, with a status chip), a vertical day-by-day timeline where each
-// day takes attractions from the search picker, supports drag-to-reorder
-// within the day, and item removal. Each day with 2+ located stops shows a
-// live driving route summary (total time/distance, refreshed as the order
-// changes) and, with enough stops, an "Optimize order" suggestion the user
-// can apply or dismiss. A sticky summary rail keeps the trip totals in view
-// and hosts the weather-aware suggestions button, which fetches each day's
-// forecast (from its first stop's coordinates) and flags days with
-// rain/storms so outdoor-heavy plans can be rethought.
+// Itinerary Builder — plan one trip day by day. A photo "trip cover" hero up
+// top (title + dates auto-saved, with a status chip), a sticky day-strip
+// navigator that shows the whole trip's shape (per-day stop density + weather
+// once checked), and a vertical day-by-day timeline where each day takes
+// attractions from the search picker, supports drag-to-reorder within the day
+// (FLIP-animated so rows glide instead of jump), and item removal. Each day
+// with 2+ located stops shows a live driving route summary and, with enough
+// stops, an "Optimize order" suggestion. A sticky summary rail keeps trip
+// totals in view and hosts the weather-aware suggestions button, which flags
+// rainy days as a planning nudge. On narrow viewports the timeline collapses
+// to one day at a time, navigated by the day strip / prev-next controls.
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import AttractionImage from '../components/explore/AttractionImage'
 import AttractionPicker from '../components/itinerary/AttractionPicker'
+import { attractionPhoto, scenes } from '../assets/photos'
 import TripMapCard from '../components/itinerary/TripMapCard'
 import {
   addItineraryItem,
@@ -46,6 +48,7 @@ function DayItemRow({ item, dragging, onDragStart, onDragEnter, onDragEnd, onRem
   return (
     <div
       className={`it-item ${dragging ? 'it-item-dragging' : ''}`}
+      data-flip-id={item.id}
       draggable
       onDragStart={(e) => {
         e.dataTransfer.effectAllowed = 'move'
@@ -93,6 +96,45 @@ function DayItemRow({ item, dragging, onDragStart, onDragEnter, onDragEnd, onRem
   )
 }
 
+/** Wraps a day's rows and FLIP-animates reorders: whenever a row's offset in
+ * the list changes between renders, it is transformed back to its old spot
+ * and released, so drag reordering glides instead of snapping. */
+function DayItems({ children, dragActive }) {
+  const ref = useRef(null)
+  const positions = useRef(new Map())
+
+  useLayoutEffect(() => {
+    const container = ref.current
+    if (!container) return
+    const containerTop = container.getBoundingClientRect().top
+    const prev = positions.current
+    const next = new Map()
+    for (const el of container.children) {
+      const id = el.dataset.flipId
+      if (!id) continue
+      const top = el.getBoundingClientRect().top - containerTop
+      next.set(id, top)
+      const old = prev.get(id)
+      const dy = old === undefined ? 0 : old - top
+      if (dy) {
+        el.style.transition = 'none'
+        el.style.transform = `translateY(${dy}px)`
+        requestAnimationFrame(() => {
+          el.style.transition = 'transform 200ms var(--ease)'
+          el.style.transform = ''
+        })
+      }
+    }
+    positions.current = next
+  })
+
+  return (
+    <div ref={ref} className={`it-day-items${dragActive ? ' is-drag-active' : ''}`}>
+      {children}
+    </div>
+  )
+}
+
 function formatDistance(meters) {
   if (typeof meters !== 'number') return ''
   if (meters < 1000) return `${Math.round(meters)} m`
@@ -133,12 +175,13 @@ function DayRouteSummary({ locatedItems, route, suggestion, onOptimize, onApply,
   return (
     <div className="it-day-route-wrap">
       <div className="it-day-route">
-        <span aria-hidden="true">🚗</span>
+        <span className="it-route-car" aria-hidden="true">🚗</span>
         {!route || route.state === 'loading' ? (
           <span className="it-route-text muted">Calculating route…</span>
         ) : route.state === 'ok' ? (
           <span className="it-route-text">
-            {formatDuration(route.total_duration_s)} ·{' '}
+            <strong>{formatDuration(route.total_duration_s)}</strong>
+            {' · '}
             {formatDistance(route.total_distance_m)} driving between{' '}
             {locatedItems.length} stops
           </span>
@@ -152,7 +195,7 @@ function DayRouteSummary({ locatedItems, route, suggestion, onOptimize, onApply,
             onClick={onOptimize}
             disabled={live?.state === 'loading' || applying}
           >
-            {live?.state === 'loading' ? 'Optimizing…' : 'Optimize order'}
+            {live?.state === 'loading' ? 'Optimizing…' : '✨ Optimize order'}
           </button>
         )}
       </div>
@@ -202,48 +245,105 @@ function DayRouteSummary({ locatedItems, route, suggestion, onOptimize, onApply,
   )
 }
 
-/** Compact weather indicator shown in a day's header once the forecast loads. */
-function DayWeatherChip({ weather }) {
+/** Coarse condition family, used only to tint the weather chip so days are
+ *  scannable at a glance (sunny warm, rainy blue, cloudy neutral…). */
+function weatherGroup(condition) {
+  if (condition === 'Clear') return 'clear'
+  if (condition === 'Clouds') return 'cloud'
+  if (condition === 'Rain' || condition === 'Drizzle') return 'rain'
+  if (condition === 'Thunderstorm') return 'storm'
+  if (condition === 'Snow') return 'snow'
+  if (['Mist', 'Fog', 'Haze', 'Smoke', 'Dust'].includes(condition)) return 'mist'
+  return 'default'
+}
+
+/** Weather, as part of the day's at-a-glance line — a compact, tinted chip. */
+function DayGlanceWeather({ weather }) {
   if (!weather) return null
   if (weather.state === 'ok') {
+    const label = weather.description || weather.condition || ''
     const title = [
-      weather.description || weather.condition,
+      label,
       weather.placeName ? `at ${weather.placeName}` : null,
     ]
       .filter(Boolean)
       .join(' ')
+    const showRain =
+      typeof weather.rainChance === 'number' && weather.rainChance >= 20
     return (
       <span
-        className={`it-day-weather${weather.isBad ? ' is-bad' : ''}`}
+        className={`it-weather-chip${weather.isBad ? ' is-bad' : ''}`}
+        data-cond={weatherGroup(weather.condition)}
         title={title}
       >
-        <span aria-hidden="true">{weather.emoji}</span>
-        {typeof weather.temp === 'number' && (
-          <span>
-            {Math.round(weather.temp)}°
-            {typeof weather.tempMin === 'number' && (
-              <span className="it-weather-lo">/{Math.round(weather.tempMin)}°</span>
-            )}
+        <span className="it-weather-chip-icon" aria-hidden="true">
+          {weather.emoji}
+        </span>
+        <span className="it-weather-chip-temp">
+          {typeof weather.temp === 'number' ? `${Math.round(weather.temp)}°` : '—'}
+          {typeof weather.tempMin === 'number' && (
+            <span className="it-weather-chip-lo">{Math.round(weather.tempMin)}°</span>
+          )}
+        </span>
+        {showRain && (
+          <span className="it-weather-chip-rain">
+            <span aria-hidden="true">💧</span>
+            {weather.rainChance}%
           </span>
         )}
-        {typeof weather.rainChance === 'number' && weather.rainChance >= 20 && (
-          <span className="it-weather-rain">💧{weather.rainChance}%</span>
-        )}
-        {weather.isCurrent && <span className="it-weather-now">now</span>}
+        {weather.isCurrent && <span className="it-weather-chip-now">Now</span>}
       </span>
     )
   }
   if (weather.state === 'out-of-range') {
     return (
-      <span className="it-day-weather muted" title="Beyond the 5-day forecast window">
-        forecast later
+      <span
+        className="it-weather-chip is-muted"
+        title="Beyond the 5-day forecast window"
+      >
+        <span className="it-weather-chip-icon" aria-hidden="true">🗓️</span>
+        <span className="it-weather-chip-note">Forecast later</span>
       </span>
     )
   }
   if (weather.state === 'unavailable') {
-    return <span className="it-day-weather muted">weather n/a</span>
+    return (
+      <span className="it-weather-chip is-muted">
+        <span className="it-weather-chip-icon" aria-hidden="true">🌡️</span>
+        <span className="it-weather-chip-note">Weather n/a</span>
+      </span>
+    )
   }
   return null
+}
+
+/** Loading skeleton shaped like the real page, so nothing jumps on arrival. */
+function BuilderSkeleton() {
+  return (
+    <div className="page it-page" aria-busy="true" aria-label="Loading your trip">
+      <div className="it-skel it-skel-hero" />
+      <div className="it-skel-strip" aria-hidden="true">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="it-skel it-skel-chip" />
+        ))}
+      </div>
+      <div className="it-layout">
+        <div className="it-timeline">
+          {[0, 1].map((d) => (
+            <div key={d} className="it-skel-day card" aria-hidden="true">
+              <div className="it-skel it-skel-title" />
+              {[0, 1, 2].map((r) => (
+                <div key={r} className="it-skel it-skel-row" />
+              ))}
+            </div>
+          ))}
+        </div>
+        <aside className="it-summary" aria-hidden="true">
+          <div className="it-skel it-skel-rail" />
+        </aside>
+      </div>
+    </div>
+  )
 }
 
 export default function ItineraryBuilder() {
@@ -263,6 +363,11 @@ export default function ItineraryBuilder() {
   const [drag, setDrag] = useState(null) // { itemId, day }
   const dragChanged = useRef(false)
   const preDragItems = useRef(null)
+
+  // Which day the day-strip highlights; on narrow viewports it's also the one
+  // day shown (single-day-at-a-time mode — the rest hide via CSS).
+  const [activeDay, setActiveDay] = useState(1)
+  const dayRefs = useRef({})
 
   // Weather-aware suggestions: fetched on demand per day (keyed by day number).
   const [weatherState, setWeatherState] = useState('idle') // idle | loading | done | error
@@ -314,9 +419,59 @@ export default function ItineraryBuilder() {
     [items]
   )
 
+  // The trip's cover: the first photographed stop, falling back to a
+  // signature Sri Lanka scene so a fresh trip still opens like a journal.
+  const coverScene = useMemo(() => {
+    for (const it of items) {
+      const photo = it.attraction ? attractionPhoto(it.attraction) : null
+      if (photo) return photo
+    }
+    return scenes.sigiriyaAerial
+  }, [items])
+
   const datesInvalid = Boolean(
     startDraft && endDraft && !dayCount(startDraft, endDraft)
   )
+
+  // The trip may shrink (dates edited) — keep the highlighted day in range.
+  useEffect(() => {
+    if (activeDay > totalDays) setActiveDay(totalDays)
+  }, [activeDay, totalDays])
+
+  // "Saved ✓" is a moment, not a permanent banner — let it fade back out.
+  useEffect(() => {
+    if (saveState !== 'saved') return undefined
+    const timer = setTimeout(() => setSaveState('idle'), 2500)
+    return () => clearTimeout(timer)
+  }, [saveState])
+
+  // Scroll-spy: as the timeline scrolls under the sticky day strip, highlight
+  // the day currently in view. (On mobile only the active day is visible, so
+  // the observer simply never fires there.)
+  useEffect(() => {
+    if (loading || totalDays <= 1) return undefined
+    const sections = Object.values(dayRefs.current).filter(Boolean)
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
+        if (visible[0]) setActiveDay(Number(visible[0].target.dataset.day))
+      },
+      { rootMargin: '-30% 0px -55% 0px' }
+    )
+    sections.forEach((s) => observer.observe(s))
+    return () => observer.disconnect()
+  }, [loading, totalDays])
+
+  const goToDay = (day) => {
+    const next = Math.min(Math.max(day, 1), totalDays)
+    setActiveDay(next)
+    // Wait a frame so a day hidden in mobile single-day mode is visible first.
+    requestAnimationFrame(() => {
+      dayRefs.current[next]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }
 
   // ---- Weather-aware suggestions ---------------------------------------------
 
@@ -434,6 +589,7 @@ export default function ItineraryBuilder() {
     routeFetchedSig.current = {}
     setDayRoutes({})
     setRouteSuggestion(null)
+    setActiveDay(1)
   }, [id])
 
   // Fetch/refresh each routable day's route whenever its stop order changes.
@@ -475,6 +631,15 @@ export default function ItineraryBuilder() {
     }, 500)
     return () => clearTimeout(timer)
   }, [routeSignature, drag, itinerary, locatedByDay])
+
+  // Trip-wide driving total for the summary rail (days with a live route only).
+  const totalDriveSeconds = useMemo(
+    () =>
+      Object.values(dayRoutes)
+        .filter((r) => r.state === 'ok')
+        .reduce((sum, r) => sum + (r.total_duration_s || 0), 0),
+    [dayRoutes]
+  )
 
   const handleOptimize = async (day) => {
     const list = locatedByDay[day] || []
@@ -563,8 +728,9 @@ export default function ItineraryBuilder() {
         dayNumber: pickerDay,
       })
       setItinerary((prev) => ({ ...prev, items: [...prev.items, item] }))
-    } catch {
+    } catch (err) {
       setSaveState('error')
+      throw err // let the picker skip its "Added ✓" flash
     }
   }
 
@@ -624,14 +790,7 @@ export default function ItineraryBuilder() {
 
   // ---- Render ------------------------------------------------------------------
 
-  if (loading) {
-    return (
-      <div className="loading-screen">
-        <div className="spinner" />
-        <p>Loading your trip…</p>
-      </div>
-    )
-  }
+  if (loading) return <BuilderSkeleton />
 
   if (loadError || !itinerary) {
     return (
@@ -666,17 +825,63 @@ export default function ItineraryBuilder() {
         My itineraries
       </Link>
 
-      <div className="it-meta card card-pad">
-        <div className="it-meta-title-row">
-          <input
-            className="it-title-input"
-            value={titleDraft}
-            onChange={(e) => setTitleDraft(e.target.value)}
-            onBlur={commitTitle}
-            onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-            maxLength={200}
-            aria-label="Trip name"
+      {/* Trip cover: photo hero with the editable title, then a slim bar for
+          dates + save status so form controls stay off the photograph. */}
+      <header className="it-hero card">
+        <div className="it-hero-media">
+          <img
+            src={coverScene.src}
+            style={{ objectPosition: coverScene.position }}
+            alt=""
+            aria-hidden="true"
           />
+          <div className="it-hero-scrim" aria-hidden="true" />
+          <div className="it-hero-content">
+            <input
+              className="it-hero-title"
+              value={titleDraft}
+              onChange={(e) => setTitleDraft(e.target.value)}
+              onBlur={commitTitle}
+              onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+              maxLength={200}
+              aria-label="Trip name"
+            />
+            <p className="it-hero-facts">
+              {totalDays} day{totalDays === 1 ? '' : 's'}
+              {items.length > 0 &&
+                ` · ${items.length} place${items.length === 1 ? '' : 's'}`}
+              {range && ` · ${range}`}
+            </p>
+          </div>
+        </div>
+        <div className="it-hero-bar">
+          <div className="it-hero-date">
+            <label className="it-hero-date-label" htmlFor="it-start">Start</label>
+            <input
+              id="it-start"
+              className="input it-hero-date-input"
+              type="date"
+              value={startDraft}
+              onChange={(e) => commitDates(e.target.value, endDraft)}
+            />
+          </div>
+          <span className="it-hero-date-arrow" aria-hidden="true">→</span>
+          <div className="it-hero-date">
+            <label className="it-hero-date-label" htmlFor="it-end">End</label>
+            <input
+              id="it-end"
+              className="input it-hero-date-input"
+              type="date"
+              value={endDraft}
+              min={startDraft || undefined}
+              onChange={(e) => commitDates(startDraft, e.target.value)}
+            />
+          </div>
+          {datesInvalid && (
+            <p className="it-days-hint it-days-hint-error">
+              End date is before the start date — not saved yet.
+            </p>
+          )}
           <span
             className={`it-save-chip it-save-${saveState}`}
             role="status"
@@ -687,113 +892,209 @@ export default function ItineraryBuilder() {
             {saveState === 'error' && "Couldn't save — retry your last change"}
           </span>
         </div>
+      </header>
 
-        <div className="it-meta-dates">
-          <div className="it-meta-date">
-            <label className="label" htmlFor="it-start">Start</label>
-            <input
-              id="it-start"
-              className="input"
-              type="date"
-              value={startDraft}
-              onChange={(e) => commitDates(e.target.value, endDraft)}
-            />
-          </div>
-          <div className="it-meta-date">
-            <label className="label" htmlFor="it-end">End</label>
-            <input
-              id="it-end"
-              className="input"
-              type="date"
-              value={endDraft}
-              min={startDraft || undefined}
-              onChange={(e) => commitDates(startDraft, e.target.value)}
-            />
-          </div>
-          <p className={`it-days-hint ${datesInvalid ? 'it-days-hint-error' : ''}`}>
-            {datesInvalid
-              ? 'End date is before the start date — not saved yet.'
-              : `${totalDays} day${totalDays === 1 ? '' : 's'}${range ? ` · ${range}` : ''}`}
-          </p>
-        </div>
-      </div>
+      {/* Day strip: the trip's shape at a glance — one chip per day with stop
+          density and (once checked) weather. Click to jump; on mobile it also
+          switches which single day is shown. */}
+      {totalDays > 1 && (
+        <nav className="it-daystrip" aria-label="Trip days">
+          {dayNumbers.map((day) => {
+            const count = items.filter((i) => i.day_number === day).length
+            const stripDate = dayDateLabel(itinerary.start_date, day)
+            const w = dayWeather[day]
+            return (
+              <button
+                key={day}
+                type="button"
+                className={`it-strip-chip${activeDay === day ? ' is-active' : ''}`}
+                onClick={() => goToDay(day)}
+                aria-current={activeDay === day ? 'true' : undefined}
+              >
+                <span className="it-strip-top">
+                  Day {day}
+                  {w?.state === 'ok' && (
+                    <span className="it-strip-emoji" aria-hidden="true">{w.emoji}</span>
+                  )}
+                </span>
+                <span className="it-strip-sub">
+                  {stripDate || (count ? `${count} stop${count === 1 ? '' : 's'}` : 'free')}
+                </span>
+                <span
+                  className="it-strip-dots"
+                  aria-label={`${count} stop${count === 1 ? '' : 's'} planned`}
+                >
+                  {count === 0 ? (
+                    <span className="it-strip-dot is-empty" />
+                  ) : (
+                    Array.from({ length: Math.min(count, 6) }, (_, i) => (
+                      <span key={i} className="it-strip-dot" />
+                    ))
+                  )}
+                </span>
+              </button>
+            )
+          })}
+        </nav>
+      )}
 
       <div className="it-layout">
         <div className="it-timeline">
+          {items.length === 0 && (
+            <div className="it-invite card">
+              <div className="it-invite-photos" aria-hidden="true">
+              {[scenes.sigiriyaGround, scenes.nineArch, scenes.coconutTreeHill].map(
+                (scene) => (
+                  <img
+                    key={scene.src}
+                    src={scene.src}
+                    style={{ objectPosition: scene.position }}
+                    alt=""
+                  />
+                )
+              )}
+              </div>
+              <h3>Start building your trip</h3>
+              <p>
+                Search Sri Lanka’s best places — beaches, temples, safaris,
+                train rides — and drop them into your days below.
+              </p>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => setPickerDay(1)}
+              >
+                + Add your first place
+              </button>
+            </div>
+          )}
+
           {dayNumbers.map((day) => {
             const dayItems = items.filter((i) => i.day_number === day)
             const dateLabel = dayDateLabel(itinerary.start_date, day)
             const dayW = dayWeather[day]
             return (
-              <section key={day} className="it-day" aria-label={`Day ${day}`}>
+              <section
+                key={day}
+                className={`it-day${activeDay === day ? ' is-active' : ''}`}
+                aria-label={`Day ${day}`}
+                data-day={day}
+                ref={(el) => {
+                  dayRefs.current[day] = el
+                }}
+              >
                 <div className="it-day-rail" aria-hidden="true">
                   <span className="it-day-dot">{day}</span>
                   <span className="it-day-line" />
                 </div>
                 <div className="it-day-main">
                   <div className="it-day-head">
-                    <h2 className="it-day-title">Day {day}</h2>
-                    {dateLabel && <span className="it-day-date">{dateLabel}</span>}
-                    <span className="it-day-count">
-                      {dayItems.length > 0 &&
-                        `${dayItems.length} place${dayItems.length === 1 ? '' : 's'}`}
-                    </span>
-                    <DayWeatherChip weather={dayW} />
+                    <div className="it-day-heading">
+                      <h2 className="it-day-title">Day {day}</h2>
+                      {dateLabel && <span className="it-day-date">{dateLabel}</span>}
+                    </div>
+                    <div className="it-day-glance">
+                      <DayGlanceWeather weather={dayW} />
+                      <span className="it-glance-count">
+                        {dayItems.length
+                          ? `${dayItems.length} place${dayItems.length === 1 ? '' : 's'}`
+                          : 'free day'}
+                      </span>
+                    </div>
                   </div>
 
                   {dayW?.state === 'ok' && dayW.isBad && (
                     <div className="it-day-warn" role="status">
-                      <span aria-hidden="true">⛈</span>{' '}
-                      {dayW.description
-                        ? dayW.description.charAt(0).toUpperCase() + dayW.description.slice(1)
-                        : 'Rain expected'}
-                      {typeof dayW.rainChance === 'number'
-                        ? ` (${dayW.rainChance}% chance)`
-                        : ''}{' '}
-                      — best to plan indoor stops for this day.
+                      <span className="it-day-warn-icon" aria-hidden="true">☔</span>
+                      <span>
+                        <strong>
+                          {dayW.description
+                            ? dayW.description.charAt(0).toUpperCase() +
+                              dayW.description.slice(1)
+                            : 'Rain expected'}
+                          {typeof dayW.rainChance === 'number'
+                            ? ` (${dayW.rainChance}% chance)`
+                            : ''}
+                          .
+                        </strong>{' '}
+                        A good day for indoor stops — temples, museums, tea rooms.
+                      </span>
                     </div>
                   )}
 
                   {dayItems.length === 0 ? (
-                    <div className="it-day-empty">
-                      Nothing planned yet — add your first stop.
-                    </div>
+                    <button
+                      type="button"
+                      className="it-day-empty"
+                      onClick={() => setPickerDay(day)}
+                    >
+                      <span className="it-day-empty-plus" aria-hidden="true">+</span>
+                      Nothing planned yet — add your first stop
+                    </button>
                   ) : (
-                    <div className="it-day-items">
-                      {dayItems.map((item) => (
-                        <DayItemRow
-                          key={item.id}
-                          item={item}
-                          dragging={drag?.itemId === item.id}
-                          onDragStart={handleDragStart}
-                          onDragEnter={handleDragEnter}
-                          onDragEnd={handleDragEnd}
-                          onRemove={handleRemove}
-                        />
-                      ))}
-                    </div>
+                    <>
+                      <DayItems dragActive={drag?.day === day}>
+                        {dayItems.map((item) => (
+                          <DayItemRow
+                            key={item.id}
+                            item={item}
+                            dragging={drag?.itemId === item.id}
+                            onDragStart={handleDragStart}
+                            onDragEnter={handleDragEnter}
+                            onDragEnd={handleDragEnd}
+                            onRemove={handleRemove}
+                          />
+                        ))}
+                      </DayItems>
+
+                      <DayRouteSummary
+                        locatedItems={locatedByDay[day] || []}
+                        route={dayRoutes[day]}
+                        suggestion={routeSuggestion?.day === day ? routeSuggestion : null}
+                        onOptimize={() => handleOptimize(day)}
+                        onApply={applyRouteSuggestion}
+                        onDismiss={() => setRouteSuggestion(null)}
+                      />
+
+                      <button
+                        type="button"
+                        className="btn btn-ghost it-day-add"
+                        onClick={() => setPickerDay(day)}
+                      >
+                        + Add a place
+                      </button>
+                    </>
                   )}
-
-                  <DayRouteSummary
-                    locatedItems={locatedByDay[day] || []}
-                    route={dayRoutes[day]}
-                    suggestion={routeSuggestion?.day === day ? routeSuggestion : null}
-                    onOptimize={() => handleOptimize(day)}
-                    onApply={applyRouteSuggestion}
-                    onDismiss={() => setRouteSuggestion(null)}
-                  />
-
-                  <button
-                    type="button"
-                    className="btn btn-ghost it-day-add"
-                    onClick={() => setPickerDay(day)}
-                  >
-                    + Add a place
-                  </button>
                 </div>
               </section>
             )
           })}
+
+          {/* Mobile-only: previous/next day, since narrow viewports show one
+              day at a time. */}
+          {totalDays > 1 && (
+            <div className="it-day-nav">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => goToDay(activeDay - 1)}
+                disabled={activeDay <= 1}
+              >
+                ‹ {activeDay > 1 ? `Day ${activeDay - 1}` : 'Day'}
+              </button>
+              <span className="it-day-nav-label">
+                Day {activeDay} of {totalDays}
+              </span>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => goToDay(activeDay + 1)}
+                disabled={activeDay >= totalDays}
+              >
+                {activeDay < totalDays ? `Day ${activeDay + 1}` : 'Day'} ›
+              </button>
+            </div>
+          )}
         </div>
 
         <aside className="it-summary">
@@ -814,6 +1115,12 @@ export default function ItineraryBuilder() {
                   {daysCovered}/{totalDays}
                 </dd>
               </div>
+              {totalDriveSeconds > 0 && (
+                <div className="it-summary-stat">
+                  <dt>Driving</dt>
+                  <dd className="it-summary-drive">{formatDuration(totalDriveSeconds)}</dd>
+                </div>
+              )}
             </dl>
 
             <div className="it-weather">
@@ -870,13 +1177,14 @@ export default function ItineraryBuilder() {
             </div>
           </div>
 
-          <TripMapCard items={items} totalDays={totalDays} />
+          <TripMapCard items={items} totalDays={totalDays} routes={dayRoutes} />
         </aside>
       </div>
 
       {pickerDay !== null && (
         <AttractionPicker
           dayNumber={pickerDay}
+          dateLabel={dayDateLabel(itinerary.start_date, pickerDay)}
           plannedIds={plannedIds}
           onAdd={handleAdd}
           onClose={() => setPickerDay(null)}

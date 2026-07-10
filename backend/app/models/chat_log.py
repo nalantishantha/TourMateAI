@@ -7,6 +7,10 @@ from datetime import datetime
 
 from ..extensions import db
 
+# Allowed values for ``quality_flag`` (besides NULL). The admin monitoring view
+# offers exactly these when marking a bot reply.
+QUALITY_FLAGS = ("unhelpful", "incorrect")
+
 
 class ChatLog(db.Model):
     __tablename__ = "ChatLogs"
@@ -20,6 +24,10 @@ class ChatLog(db.Model):
     )
     message = db.Column(db.Text, nullable=False)
     response = db.Column(db.Text)  # filled in by the chatbot
+    # Admin chatbot-accuracy review. NULL = unreviewed; otherwise one of
+    # QUALITY_FLAGS ("unhelpful" | "incorrect"). Set from the admin Chatbot
+    # Monitoring view so the AI teammate can spot weak answers to retrain on.
+    quality_flag = db.Column(db.String(20), index=True)
     # Attraction ids the reply suggested (list[int], may be empty/None) — kept so
     # the Chat page can re-render the inline attraction cards when the user's
     # conversation is reloaded from history, not just the text.

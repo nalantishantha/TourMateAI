@@ -25,68 +25,8 @@
   color: var(--color-text-muted);
 }
 
-.feature-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-  gap: var(--space-6);
-}
-
-.feature-card {
-  display: flex;
-  flex-direction: column;
-  padding: var(--space-8) var(--space-6);
-  color: inherit;
-}
-
-.feature-card:hover { color: inherit; }
-
-.feature-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 3rem;
-  height: 3rem;
-  margin-bottom: var(--space-5);
-  border-radius: var(--radius-md);
-}
-
-.feature-icon svg { width: 1.5rem; height: 1.5rem; }
-
-.feature-clay .feature-icon {
-  background-color: var(--color-primary-soft);
-  color: var(--color-primary-hover);
-}
-
-.feature-ocean .feature-icon {
-  background-color: var(--color-accent-soft);
-  color: var(--color-accent);
-}
-
-.feature-spice .feature-icon {
-  background-color: var(--color-highlight-soft);
-  color: var(--gold-600);
-}
-
-.feature-title { margin-bottom: var(--space-2); }
-
-.feature-desc {
-  flex: 1;
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-}
-
-.feature-cta {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-top: var(--space-6);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--color-primary-hover);
-  transition: gap var(--speed-fast) var(--ease);
-}
-
-.feature-card:hover .feature-cta { gap: var(--space-3); }
+/* (The old home feature-card styles moved to landing.css, which owns the
+   .feature-* classes now.) */
 
 /* ---- Coming-soon empty state -------------------------------------------------*/
 
@@ -113,7 +53,79 @@
 
 /* Profile page styles now live in styles/profile.css. */
 
+/* ---- Error / 404 states ------------------------------------------------------*/
+
+/* Full-viewport wrapper for the top-level crash screen (rendered outside the
+   app shell by ErrorBoundary, so it centres itself on the page). */
+.error-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+}
+
+/* Shared card for the 404 page and the crash fallback. */
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-3);
+  max-width: 32rem;
+  margin: 0 auto;
+  padding: var(--space-12) var(--space-6);
+}
+
+.error-state-code {
+  font-family: var(--font-display);
+  font-size: 4rem;
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  color: var(--color-primary);
+}
+
+.error-state-icon {
+  font-size: 2.75rem;
+  line-height: 1;
+}
+
+.error-state-title { margin: 0; }
+
+.error-state-text {
+  max-width: 28rem;
+  color: var(--color-text-muted);
+}
+
+/* Dev-only stack trace; hidden in production builds (see ErrorBoundary). */
+.error-state-detail {
+  width: 100%;
+  max-height: 12rem;
+  overflow: auto;
+  text-align: left;
+  font-size: var(--text-xs);
+  background: var(--color-surface-subtle, #f5f5f4);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.error-state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: center;
+  margin-top: var(--space-3);
+}
+
 @media (max-width: 820px) {
   .home-greeting { font-size: var(--text-3xl); }
   .home-hero { padding-bottom: var(--space-8); }
+
+  .error-state { padding: var(--space-10) var(--space-4); }
+  .error-state-code { font-size: 3.25rem; }
+  .error-state-actions { width: 100%; }
+  .error-state-actions .btn { flex: 1 1 auto; }
 }

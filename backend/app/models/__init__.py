@@ -5,6 +5,7 @@ Flask-Migrate/Alembic can autogenerate migrations. The app factory imports it.
 """
 
 from ..extensions import db
+from .admin_action import AdminAction
 from .attraction import Attraction
 from .chat_log import ChatLog
 from .feedback import Feedback
@@ -16,6 +17,7 @@ from .user import User
 __all__ = [
     "db",
     "User",
+    "AdminAction",
     "Attraction",
     "Interaction",
     "InteractionType",
