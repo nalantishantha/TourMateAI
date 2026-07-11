@@ -1,7 +1,6 @@
 // Add/edit attraction form modal for the admin Attractions panel.
 // Category options mirror the backend's known set (routes/users.py
 // INTEREST_OPTIONS) so user interests keep mapping onto categories.
-
 import { useState } from 'react'
 import {
   createAttraction,
