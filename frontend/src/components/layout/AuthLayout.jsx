@@ -19,7 +19,7 @@ export default function AuthLayout({ children }) {
         <div className="auth-photo-scrim" aria-hidden="true" />
 
         <div className="auth-brand-top">
-          <Logo size="lg" />
+          <Logo size="lg" variant="bw" />
         </div>
 
         <div className="auth-brand-copy">
