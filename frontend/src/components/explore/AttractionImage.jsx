@@ -33,6 +33,23 @@ const RIDGES = [
 ]
 
 export default function AttractionImage({ attraction, className = '' }) {
+  // Resolution order:
+  //  1. Admin-uploaded image_url — always wins so that a custom photo set in
+  //     the admin portal is shown everywhere, even for well-known attractions
+  //     that have a bundled photo (Sigiriya, Anuradhapura, …).
+  //  2. Bundled photo matched by attraction name / category (assets/photos.js).
+  //  3. Generated SVG landscape placeholder tinted per category.
+  if (attraction.image_url) {
+    return (
+      <img
+        src={attraction.image_url}
+        alt={attraction.name}
+        className={className}
+        loading="lazy"
+      />
+    )
+  }
+
   const photo = attractionPhoto(attraction)
   if (photo) {
     return (
@@ -41,17 +58,6 @@ export default function AttractionImage({ attraction, className = '' }) {
         alt={attraction.name}
         className={className}
         style={{ objectPosition: photo.position }}
-        loading="lazy"
-      />
-    )
-  }
-
-  if (attraction.image_url) {
-    return (
-      <img
-        src={attraction.image_url}
-        alt={attraction.name}
-        className={className}
         loading="lazy"
       />
     )

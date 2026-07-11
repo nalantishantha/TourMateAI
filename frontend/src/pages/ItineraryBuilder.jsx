@@ -427,11 +427,16 @@ export default function ItineraryBuilder() {
     )
   }, [items, pickerDay])
 
-  // The trip's cover: the first photographed stop, falling back to a
-  // signature Sri Lanka scene so a fresh trip still opens like a journal.
+  // The trip's cover: the first stop that has any photo (admin-uploaded
+  // image_url first, then a bundled scene), falling back to a signature scene.
   const coverScene = useMemo(() => {
     for (const it of items) {
-      const photo = it.attraction ? attractionPhoto(it.attraction) : null
+      if (!it.attraction) continue
+      // Admin-uploaded image takes priority over bundled photos.
+      if (it.attraction.image_url) {
+        return { src: it.attraction.image_url, position: '50% 50%' }
+      }
+      const photo = attractionPhoto(it.attraction)
       if (photo) return photo
     }
     return scenes.sigiriyaAerial
