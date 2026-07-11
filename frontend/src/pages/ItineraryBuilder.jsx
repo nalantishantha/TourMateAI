@@ -419,11 +419,24 @@ export default function ItineraryBuilder() {
     [items]
   )
 
-  // The trip's cover: the first photographed stop, falling back to a
-  // signature Sri Lanka scene so a fresh trip still opens like a journal.
+  // IDs already in the day that the picker is open for — used to block same-day duplicates.
+  const dayPlannedIds = useMemo(() => {
+    if (pickerDay === null) return new Set()
+    return new Set(
+      items.filter((i) => i.day_number === pickerDay).map((i) => i.attraction_id)
+    )
+  }, [items, pickerDay])
+
+  // The trip's cover: the first stop that has any photo (admin-uploaded
+  // image_url first, then a bundled scene), falling back to a signature scene.
   const coverScene = useMemo(() => {
     for (const it of items) {
-      const photo = it.attraction ? attractionPhoto(it.attraction) : null
+      if (!it.attraction) continue
+      // Admin-uploaded image takes priority over bundled photos.
+      if (it.attraction.image_url) {
+        return { src: it.attraction.image_url, position: '50% 50%' }
+      }
+      const photo = attractionPhoto(it.attraction)
       if (photo) return photo
     }
     return scenes.sigiriyaAerial
@@ -722,6 +735,15 @@ export default function ItineraryBuilder() {
   // ---- Items: add / remove / reorder -----------------------------------------
 
   const handleAdd = async (attraction) => {
+    // Block same-day duplicates — the same attraction cannot be added twice to
+    // the same day. A toast-like guard here prevents the API call entirely.
+    const alreadyInDay = items.some(
+      (i) => i.day_number === pickerDay && i.attraction_id === attraction.id
+    )
+    if (alreadyInDay) {
+      // Throw so the picker surfaces the "already added" state instead of ✓ Added.
+      throw new Error('duplicate')
+    }
     try {
       const item = await addItineraryItem(itinerary.id, {
         attractionId: attraction.id,
@@ -1182,10 +1204,11 @@ export default function ItineraryBuilder() {
       </div>
 
       {pickerDay !== null && (
-        <AttractionPicker
+      <AttractionPicker
           dayNumber={pickerDay}
           dateLabel={dayDateLabel(itinerary.start_date, pickerDay)}
           plannedIds={plannedIds}
+          alreadyInDayIds={dayPlannedIds}
           onAdd={handleAdd}
           onClose={() => setPickerDay(null)}
         />

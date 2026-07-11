@@ -10,7 +10,7 @@ import { fetchAttractions } from '../../services/attractions'
 const SEARCH_DEBOUNCE_MS = 300
 const RESULTS_PER_PAGE = 8
 
-export default function AttractionPicker({ dayNumber, dateLabel, plannedIds, onAdd, onClose }) {
+export default function AttractionPicker({ dayNumber, dateLabel, plannedIds, alreadyInDayIds = new Set(), onAdd, onClose }) {
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
@@ -130,8 +130,9 @@ export default function AttractionPicker({ dayNumber, dateLabel, plannedIds, onA
               No places match {search ? `“${search}”` : 'that'}. Try another word.
             </p>
           ) : (
-            results.map((attraction) => {
-              const planned = plannedIds.has(attraction.id)
+          results.map((attraction) => {
+              const inThisDay = alreadyInDayIds.has(attraction.id)
+              const inOtherDay = !inThisDay && plannedIds.has(attraction.id)
               const justAdded = justAddedId === attraction.id
               return (
                 <div key={attraction.id} className="it-picker-row">
@@ -147,19 +148,28 @@ export default function AttractionPicker({ dayNumber, dateLabel, plannedIds, onA
                   </div>
                   <button
                     type="button"
-                    className={`btn ${planned ? 'btn-ghost' : 'btn-secondary'} it-picker-add${
+                    className={`btn ${
+                      inThisDay
+                        ? 'btn-ghost'
+                        : inOtherDay
+                          ? 'btn-ghost'
+                          : 'btn-secondary'
+                    } it-picker-add${
                       justAdded ? ' is-added' : ''
                     }`}
                     onClick={() => handleAdd(attraction)}
-                    disabled={addingId === attraction.id || justAdded}
+                    disabled={addingId === attraction.id || justAdded || inThisDay}
+                    title={inThisDay ? `${attraction.name} is already in Day ${dayNumber}` : undefined}
                   >
                     {addingId === attraction.id
                       ? 'Adding…'
                       : justAdded
                         ? '✓ Added'
-                        : planned
-                          ? '+ Add again'
-                          : '+ Add'}
+                        : inThisDay
+                          ? '✓ In this day'
+                          : inOtherDay
+                            ? '+ Add again'
+                            : '+ Add'}
                   </button>
                 </div>
               )
@@ -180,8 +190,9 @@ export default function AttractionPicker({ dayNumber, dateLabel, plannedIds, onA
         </div>
 
         <p className="it-picker-hint">
-          Places already in your trip show “Add again” — revisiting a spot on
-          another day is fair game.
+          Places already in <strong>this day</strong> show "✓ In this day" and
+          can't be added again. Revisiting the same spot on a different day is
+          fine — those show "+ Add again".
         </p>
       </div>
     </div>

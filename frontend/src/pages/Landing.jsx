@@ -89,7 +89,7 @@ export default function Landing() {
   return (
     <div className="landing">
       <header className="landing-nav">
-        <Logo />
+        <Logo variant="bw" />
         <nav className="landing-nav-actions" aria-label="Account">
           {isAuthenticated ? (
             <Link to="/" className="btn btn-white">
@@ -238,7 +238,7 @@ export default function Landing() {
       </section>
 
       <footer className="landing-footer">
-        <Logo />
+        <Logo variant="bw" />
         <span>© {new Date().getFullYear()} TourMateAI · A CIS6035 project</span>
       </footer>
     </div>
