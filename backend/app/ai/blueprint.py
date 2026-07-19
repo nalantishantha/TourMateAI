@@ -16,6 +16,8 @@ Contract source of truth: docs/api-contract.md (keep in sync).
 
 from flask import Blueprint, jsonify, request
 
+from .planner import run_travel_agent
+
 # Registered by the app factory at url_prefix="/api/ai", so routes below are
 # the paths *after* that prefix (e.g. "/recommend" -> "/api/ai/recommend").
 ai_bp = Blueprint("ai", __name__)
@@ -141,3 +143,45 @@ def identify():
             "received_file": image.filename,
         }
     )
+
+
+from ..routes.auth import require_auth
+from ..models import Itinerary
+from ..extensions import db
+
+@ai_bp.post("/plan")
+@require_auth
+def plan():
+    """AI itinerary planner endpoint.
+    
+    Expects JSON body: {"message": "Plan a 3 day trip to Colombo...", "itinerary_id": 123}
+    Returns JSON containing the thread_id and final answer.
+    """
+    from flask import g
+    body = request.get_json(silent=True) or {}
+    message = (body.get("message") or "").strip()
+    itinerary_id = body.get("itinerary_id")
+
+    if not message:
+        return jsonify({"error": "message is required"}), 400
+    
+    if not itinerary_id:
+        return jsonify({"error": "itinerary_id is required"}), 400
+        
+    itinerary = Itinerary.query.filter_by(id=itinerary_id, user_id=g.current_user.id).first()
+    if not itinerary:
+        return jsonify({"error": "Itinerary not found"}), 404
+
+    try:
+        # Pass the existing thread_id if this is an edit
+        result = run_travel_agent(user_input=message, thread_id=itinerary.thread_id)
+        
+        # Save results
+        itinerary.ai_plan = result["answer"]
+        itinerary.thread_id = result["thread_id"]
+        db.session.commit()
+        
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
