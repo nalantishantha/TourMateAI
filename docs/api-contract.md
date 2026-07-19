@@ -108,6 +108,32 @@ If confidence is below threshold: `{ "landmark": null, "confidence": <low>, "mes
 
 ---
 
+## 4. `POST /api/ai/plan`
+
+AI-driven itinerary planner that uses LangGraph agents to search flights, hotels, and generate a travel itinerary based on a user's prompt.
+
+**Request**
+```json
+{
+  "message": "Plan a 3 day budget trip to Colombo from New York",
+  "thread_id": "optional-thread-id-for-conversation-memory"
+}
+```
+
+**Response**
+```json
+{
+  "thread_id": "user_abc123",
+  "answer": "Here is your 3-day itinerary...",
+  "itinerary": "Day 1: ...",
+  "flight_results": "Flight options...",
+  "hotel_results": "Hotel options...",
+  "llm_calls": 4
+}
+```
+
+---
+
 ## Conventions
 
 - Errors: `{ "error": "message" }` with an appropriate HTTP status.
