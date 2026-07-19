@@ -346,6 +346,8 @@ function BuilderSkeleton() {
   )
 }
 
+import AITripViewer from './AITripViewer'
+
 export default function ItineraryBuilder() {
   const { id } = useParams()
 
@@ -813,6 +815,10 @@ export default function ItineraryBuilder() {
   // ---- Render ------------------------------------------------------------------
 
   if (loading) return <BuilderSkeleton />
+
+  if (itinerary?.is_ai_generated) {
+    return <AITripViewer initialItinerary={itinerary} />
+  }
 
   if (loadError || !itinerary) {
     return (
