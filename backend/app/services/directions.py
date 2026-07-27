@@ -84,10 +84,12 @@ def get_route(coords: list[tuple[float, float]], optimize: bool = False) -> dict
     if len(coords) < 2:
         raise ValueError("get_route needs at least two coordinates.")
 
-    rounded = tuple(
-        (round(lat, _COORD_PRECISION), round(lng, _COORD_PRECISION))
-        for lat, lng in coords
-    )
+    def round_point(p):
+        if isinstance(p, str):
+            return p
+        return (round(p[0], _COORD_PRECISION), round(p[1], _COORD_PRECISION))
+
+    rounded = tuple(round_point(p) for p in coords)
     key = (rounded, optimize)
     ttl = current_app.config.get("ROUTE_CACHE_TTL", 21600)
 
@@ -110,6 +112,8 @@ def _build_payload(coords: tuple, optimize: bool) -> dict:
         raise DirectionsUnavailable("Route planning is not configured on the server.")
 
     def waypoint(point):
+        if isinstance(point, str):
+            return {"address": point}
         return {"location": {"latLng": {"latitude": point[0], "longitude": point[1]}}}
 
     intermediates = [waypoint(p) for p in coords[1:-1]]

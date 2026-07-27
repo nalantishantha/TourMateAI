@@ -1307,7 +1307,7 @@ export default function ItineraryBuilder() {
             </div>
           </div>
 
-          <TripMapCard items={items} totalDays={totalDays} routes={dayRoutes} />
+          <TripMapCard items={items} totalDays={totalDays} routes={dayRoutes} startLocation={itinerary?.start_location} />
         </aside>
       </div>
 
