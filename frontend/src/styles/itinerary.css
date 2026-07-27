@@ -1486,3 +1486,96 @@
 
   .it-invite-photos img { width: 5rem; height: 3.75rem; }
 }
+
+/* ---- Modern PDF Export --------------------------------------------------------*/
+
+.modern-pdf-container {
+  font-family: var(--font-stack, 'Inter', sans-serif);
+  color: var(--color-gray-900, #111827);
+  background: white;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.modern-pdf-container * {
+  box-sizing: border-box;
+}
+
+.modern-pdf-container .pdf-header {
+  background: linear-gradient(135deg, var(--color-primary-dark, #0d9488), var(--color-primary, #14b8a6));
+  color: white;
+  padding: 40px 50px;
+  border-radius: 0 0 24px 24px;
+  margin-bottom: 40px;
+  box-shadow: 0 10px 25px -5px rgba(20, 184, 166, 0.4);
+}
+
+.modern-pdf-container .pdf-header h1 {
+  font-size: 42px;
+  font-weight: 800;
+  margin: 0 0 10px 0;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  text-transform: capitalize;
+}
+
+.modern-pdf-container .pdf-header p {
+  font-size: 18px;
+  opacity: 0.9;
+  margin: 0;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.modern-pdf-container .pdf-content {
+  padding: 0 50px 50px 50px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.modern-pdf-container .pdf-content h2 {
+  color: var(--color-primary-dark, #0f766e);
+  font-size: 24px;
+  font-weight: 700;
+  border-bottom: 2px solid var(--color-gray-200, #e5e7eb);
+  padding-bottom: 12px;
+  margin-top: 40px;
+  margin-bottom: 20px;
+}
+
+.modern-pdf-container .pdf-content h3 {
+  color: var(--color-gray-900, #111827);
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 25px;
+  margin-bottom: 15px;
+}
+
+.modern-pdf-container .pdf-content ul {
+  list-style-type: none;
+  padding-left: 0;
+  margin-top: 10px;
+}
+
+.modern-pdf-container .pdf-content li {
+  background: var(--color-gray-50, #f9fafb);
+  border: 1px solid var(--color-gray-200, #e5e7eb);
+  border-left: 5px solid var(--color-primary, #14b8a6);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.modern-pdf-container .pdf-content p {
+  margin-bottom: 16px;
+  color: var(--color-gray-700, #374151);
+}
+
+.modern-pdf-container .pdf-content strong {
+  color: var(--color-gray-900, #111827);
+  font-weight: 700;
+}

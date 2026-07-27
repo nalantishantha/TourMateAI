@@ -870,19 +870,28 @@ export default function ItineraryBuilder() {
           const { createRoot } = await import('react-dom/client')
           
           const tempDiv = document.createElement('div')
-          tempDiv.className = 'markdown-body'
-          tempDiv.style.padding = '2rem'
-          tempDiv.style.background = 'white'
-          tempDiv.style.color = 'black'
+          tempDiv.className = 'modern-pdf-container'
+          
+          const startDate = itinerary.start_date ? new Date(itinerary.start_date).toLocaleDateString() : 'TBD'
+          const endDate = itinerary.end_date ? new Date(itinerary.end_date).toLocaleDateString() : 'TBD'
+          
+          tempDiv.innerHTML = `
+            <div class="pdf-header">
+              <h1>${itinerary.title}</h1>
+              <p>${startDate} - ${endDate}</p>
+            </div>
+            <div class="pdf-content"></div>
+          `
           
           pdfContainerRef.current.appendChild(tempDiv)
-          const root = createRoot(tempDiv)
+          const contentDiv = tempDiv.querySelector('.pdf-content')
+          const root = createRoot(contentDiv)
           root.render(<ReactMarkdown>{response.data.markdown}</ReactMarkdown>)
           
           setTimeout(async () => {
              const html2pdf = (await import('html2pdf.js')).default
              const opt = {
-               margin: 10,
+               margin: [0, 0, 10, 0], // Top margin 0 for full-width banner
                filename: `${itinerary.title.replace(/\s+/g, '_')}_Plan.pdf`,
                image: { type: 'jpeg', quality: 0.98 },
                html2canvas: { scale: 2 },

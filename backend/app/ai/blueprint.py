@@ -205,10 +205,9 @@ def generate_pdf_summary():
         system_prompt = """You are a professional travel document generator. 
 The user has finalized their trip and wants a beautiful Markdown document that they can download as a PDF.
 Write a 1-page summary of the itinerary provided.
-Include these sections:
-# [Trip Name]
+Do NOT include the main Trip Name as a heading. Start directly with:
 ## Trip Summary (Dates, total places)
-## Day-by-Day Itinerary (add brief engaging descriptions of each place based on your general knowledge)
+## Day-by-Day Itinerary (add brief engaging descriptions of each place based on your general knowledge. Use bullet points.)
 ## Practical Tips (a few general travel tips for this route)
 
 Do not use conversational filler. Just return the markdown."""
