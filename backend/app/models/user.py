@@ -17,6 +17,9 @@ class User(db.Model):
     is_admin = db.Column(
         db.Boolean, nullable=False, default=False, server_default=db.text("0")
     )
+    chat_sessions = db.relationship(
+        "ChatSession", back_populates="user", cascade="all, delete-orphan", order_by="ChatSession.created_at.desc()"
+    )
     # Travel preferences — feeds the recommendation engine. Small, stable JSON:
     #   {
     #     "interests": ["Beach", "Wildlife"],  # subset of Attraction.category values

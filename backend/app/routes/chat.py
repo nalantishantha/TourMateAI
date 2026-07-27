@@ -1,29 +1,19 @@
 """Chat endpoints backing the Chat page.
 
-The turn itself is a thin HTTP wrapper: all conversational logic — keyword
-rules today, the real RAG chatbot later — lives behind
-``services.ai_service.chatbot_reply()``, so swapping the mock for the real
-implementation is a config flip (``USE_MOCK_AI``), not a change here.
-
-What this module adds on top of the service call is persistence: every
-exchange is stored as a ChatLogs row (message + response + suggested
-attraction ids), which is what lets the Chat page restore the user's previous
-conversation — cards included — when they come back.
-
-The service returns ``suggested_attractions`` as bare ids (its contract); these
-routes expand them into full serialized attractions so the frontend can render
-the inline cards without a second round-trip.
-
 Routes (registered under ``/api``):
-  - ``POST   /api/chat``          auth: one chatbot turn (persisted)
-  - ``GET    /api/chat/history``  auth: the user's stored conversation
-  - ``DELETE /api/chat/history``  auth: clear the user's conversation
+  - ``GET    /api/chat/sessions``         auth: list user's chat sessions
+  - ``POST   /api/chat/sessions``         auth: create a new empty chat session
+  - ``GET    /api/chat/sessions/<id>/history`` auth: session's stored conversation
+  - ``DELETE /api/chat/sessions/<id>``    auth: delete a specific session
+  - ``PATCH  /api/chat/sessions/<id>``    auth: rename a specific session
+  - ``POST   /api/chat``                  auth: one chatbot turn (persisted)
 """
 
 from flask import Blueprint, current_app, g, jsonify, request
+from sqlalchemy.orm import joinedload
 
 from ..extensions import db
-from ..models import Attraction, ChatLog
+from ..models import Attraction, ChatLog, ChatSession
 from ..services.ai_service import chatbot_reply
 from .attractions import _serialize_attraction
 from .auth import require_auth
@@ -32,30 +22,17 @@ from .helpers import json_error
 chat_bp = Blueprint("chat", __name__)
 
 MAX_MESSAGE_LENGTH = 2000
-
-# How many prior turns we forward to the chatbot — enough for conversational
-# context without letting a long conversation bloat every request.
 MAX_HISTORY_TURNS = 20
-
 HISTORY_DEFAULT_LIMIT = 50
 HISTORY_MAX_LIMIT = 200
-
 _HISTORY_ROLES = ("user", "assistant")
 
 
 def _source():
-    """Which implementation answered — mirrors routes/recommendations.py."""
     return "mock" if current_app.config.get("USE_MOCK_AI", True) else "ai"
 
 
 def _clean_history(raw):
-    """Sanitize a client-sent ``conversation_history`` into service shape.
-
-    Keeps only well-formed ``{"role": "user"|"assistant", "content": str}``
-    turns (malformed entries are dropped, not rejected — history is advisory
-    context, not user data we need to police) and caps the tail at
-    ``MAX_HISTORY_TURNS``.
-    """
     turns = []
     for item in raw:
         if not isinstance(item, dict):
@@ -68,12 +45,6 @@ def _clean_history(raw):
 
 
 def _attractions_by_ids(ids, lookup=None):
-    """Expand attraction ids into serialized dicts, preserving id order.
-
-    Ids that no longer resolve (attraction deleted since the chat was logged)
-    are silently skipped. Pass a prebuilt ``lookup`` (id -> serialized dict) to
-    reuse one query across many rows.
-    """
     if not ids:
         return []
     if lookup is None:
@@ -83,7 +54,6 @@ def _attractions_by_ids(ids, lookup=None):
 
 
 def _serialize_chat_log(log, lookup=None):
-    """Shape a ChatLog row for JSON (one user+assistant exchange)."""
     return {
         "id": log.id,
         "message": log.message,
@@ -95,6 +65,100 @@ def _serialize_chat_log(log, lookup=None):
     }
 
 
+def _serialize_chat_session(session):
+    return {
+        "id": session.id,
+        "title": session.title,
+        "created_at": session.created_at.isoformat() if session.created_at else None,
+    }
+
+
+@chat_bp.get("/chat/sessions")
+@require_auth
+def get_sessions():
+    """Get all chat sessions for the current user."""
+    sessions = ChatSession.query.filter_by(user_id=g.current_user.id).order_by(ChatSession.created_at.desc()).all()
+    return jsonify({"sessions": [_serialize_chat_session(s) for s in sessions]})
+
+
+@chat_bp.post("/chat/sessions")
+@require_auth
+def create_session():
+    """Create a new empty chat session."""
+    body = request.get_json(silent=True) or {}
+    title = body.get("title", "New Chat")
+    session = ChatSession(user_id=g.current_user.id, title=title)
+    db.session.add(session)
+    db.session.commit()
+    return jsonify(_serialize_chat_session(session)), 201
+
+
+@chat_bp.delete("/chat/sessions/<int:session_id>")
+@require_auth
+def delete_session(session_id):
+    """Delete a chat session."""
+    session = ChatSession.query.filter_by(id=session_id, user_id=g.current_user.id).first()
+    if not session:
+        return json_error("Session not found", 404)
+    db.session.delete(session)
+    db.session.commit()
+    return jsonify({"deleted": True})
+
+
+@chat_bp.patch("/chat/sessions/<int:session_id>")
+@require_auth
+def rename_session(session_id):
+    """Rename a chat session."""
+    session = ChatSession.query.filter_by(id=session_id, user_id=g.current_user.id).first()
+    if not session:
+        return json_error("Session not found", 404)
+    
+    body = request.get_json(silent=True) or {}
+    title = body.get("title")
+    if not isinstance(title, str) or not title.strip():
+        return json_error("title is required and must be a non-empty string.", 400)
+    
+    session.title = title[:255].strip()
+    db.session.commit()
+    return jsonify(_serialize_chat_session(session))
+
+
+@chat_bp.get("/chat/sessions/<int:session_id>/history")
+@require_auth
+def get_session_history(session_id):
+    """Get the conversation history for a session."""
+    session = ChatSession.query.filter_by(id=session_id, user_id=g.current_user.id).first()
+    if not session:
+        return json_error("Session not found", 404)
+
+    raw_limit = request.args.get("limit", str(HISTORY_DEFAULT_LIMIT))
+    try:
+        limit = int(raw_limit)
+    except (TypeError, ValueError):
+        return json_error("limit must be an integer.", 400)
+    if limit < 1:
+        return json_error("limit must be positive.", 400)
+    limit = min(limit, HISTORY_MAX_LIMIT)
+
+    rows = (
+        ChatLog.query.filter_by(session_id=session_id)
+        .order_by(ChatLog.id.desc())
+        .limit(limit)
+        .all()
+    )
+    rows.reverse()
+
+    all_ids = {i for row in rows for i in (row.suggested_attractions or [])}
+    lookup = {}
+    if all_ids:
+        attractions = Attraction.query.filter(Attraction.id.in_(all_ids)).all()
+        lookup = {a.id: _serialize_attraction(a) for a in attractions}
+
+    return jsonify(
+        {"messages": [_serialize_chat_log(row, lookup) for row in rows]}
+    )
+
+
 @chat_bp.post("/chat")
 @require_auth
 def send_message():
@@ -102,11 +166,8 @@ def send_message():
 
     Body:
       - ``message``               required non-empty string (<= 2000 chars)
-      - ``conversation_history``  optional list of prior turns, each
-                                  ``{"role": "user"|"assistant", "content": str}``
-
-    Returns the assistant ``reply`` plus ``suggested_attractions`` expanded to
-    full attraction objects, and the persisted exchange's id/timestamp.
+      - ``session_id``            required integer (must own session)
+      - ``conversation_history``  optional list of prior turns
     """
     body = request.get_json(silent=True) or {}
 
@@ -118,6 +179,14 @@ def send_message():
         return json_error(
             f"message must be at most {MAX_MESSAGE_LENGTH} characters.", 400
         )
+        
+    session_id = body.get("session_id")
+    if not isinstance(session_id, int):
+        return json_error("session_id is required and must be an integer.", 400)
+        
+    session = ChatSession.query.filter_by(id=session_id, user_id=g.current_user.id).first()
+    if not session:
+        return json_error("Session not found", 404)
 
     raw_history = body.get("conversation_history")
     if raw_history is not None and not isinstance(raw_history, list):
@@ -125,9 +194,19 @@ def send_message():
     history = _clean_history(raw_history or [])
 
     result = chatbot_reply(g.current_user.id, message, history or None)
+    
+    # Auto-generate title if this is the first message in a default-titled session
+    is_first_message = ChatLog.query.filter_by(session_id=session.id).count() == 0
+    if is_first_message and session.title == "New Chat":
+        # simple title generation: first 30 chars of the message
+        new_title = message[:30]
+        if len(message) > 30:
+            new_title += "..."
+        session.title = new_title
 
     log = ChatLog(
         user_id=g.current_user.id,
+        session_id=session.id,
         message=message,
         response=result["reply"],
         suggested_attractions=result["suggested_attractions"],
@@ -145,55 +224,8 @@ def send_message():
                 "chat_log_id": log.id,
                 "created_at": log.created_at.isoformat() if log.created_at else None,
                 "source": _source(),
+                "session_title": session.title, # Pass back so frontend can update title instantly
             }
         ),
         201,
     )
-
-
-@chat_bp.get("/chat/history")
-@require_auth
-def get_history():
-    """The current user's stored conversation, oldest exchange first.
-
-    Query params:
-      - ``limit``  max exchanges to return (default 50, capped at 200); when the
-                   log is longer, the **most recent** ``limit`` exchanges win.
-    """
-    raw_limit = request.args.get("limit", str(HISTORY_DEFAULT_LIMIT))
-    try:
-        limit = int(raw_limit)
-    except (TypeError, ValueError):
-        return json_error("limit must be an integer.", 400)
-    if limit < 1:
-        return json_error("limit must be positive.", 400)
-    limit = min(limit, HISTORY_MAX_LIMIT)
-
-    # Newest-first + reverse = "the last N exchanges, in chronological order".
-    rows = (
-        ChatLog.query.filter_by(user_id=g.current_user.id)
-        .order_by(ChatLog.id.desc())
-        .limit(limit)
-        .all()
-    )
-    rows.reverse()
-
-    # One attraction query for the whole page of history, shared by every row.
-    all_ids = {i for row in rows for i in (row.suggested_attractions or [])}
-    lookup = {}
-    if all_ids:
-        attractions = Attraction.query.filter(Attraction.id.in_(all_ids)).all()
-        lookup = {a.id: _serialize_attraction(a) for a in attractions}
-
-    return jsonify(
-        {"messages": [_serialize_chat_log(row, lookup) for row in rows]}
-    )
-
-
-@chat_bp.delete("/chat/history")
-@require_auth
-def clear_history():
-    """Delete the current user's entire conversation. Returns the row count."""
-    deleted = ChatLog.query.filter_by(user_id=g.current_user.id).delete()
-    db.session.commit()
-    return jsonify({"deleted": deleted})
