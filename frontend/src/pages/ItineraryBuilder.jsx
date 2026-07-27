@@ -23,6 +23,7 @@ import {
   removeItineraryItem,
   reorderItineraryItems,
   updateItinerary,
+  generateItineraryWithAI,
 } from '../services/itineraries'
 import { fetchWeather } from '../services/weather'
 import { dayCount, dayDateLabel, dayIsoDate, formatTripRange } from '../utils/tripDates'
@@ -732,7 +733,38 @@ export default function ItineraryBuilder() {
     saveMeta({ start_date: nextStart || null, end_date: nextEnd || null })
   }
 
-  // ---- Items: add / remove / reorder -----------------------------------------
+  // ---- Items: add / remove / reorder / AI generate ---------------------------
+
+  const handleAutoGenerate = async () => {
+    setSaveState('saving')
+    try {
+      const generatedItems = await generateItineraryWithAI({
+        startDate: itinerary.start_date,
+        endDate: itinerary.end_date,
+        preferences: { 
+          description: itinerary.description,
+          start_location: itinerary.start_location,
+          end_location: itinerary.end_location
+        } 
+      })
+      
+      // Save items to backend one by one
+      let updatedItems = [...itinerary.items]
+      for (const genItem of generatedItems) {
+        const item = await addItineraryItem(itinerary.id, {
+          attractionId: genItem.attraction_id,
+          dayNumber: genItem.day_number,
+        })
+        updatedItems.push(item)
+      }
+      
+      setItinerary((prev) => ({ ...prev, items: updatedItems }))
+      setSaveState('saved')
+    } catch (err) {
+      console.error(err)
+      setSaveState('error')
+    }
+  }
 
   const handleAdd = async (attraction) => {
     // Block same-day duplicates — the same attraction cannot be added twice to
@@ -981,13 +1013,23 @@ export default function ItineraryBuilder() {
                 Search Sri Lanka’s best places — beaches, temples, safaris,
                 train rides — and drop them into your days below.
               </p>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() => setPickerDay(1)}
-              >
-                + Add your first place
-              </button>
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => setPickerDay(1)}
+                >
+                  + Add your first place
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={handleAutoGenerate}
+                  disabled={saveState === 'saving'}
+                >
+                  {saveState === 'saving' ? 'Generating...' : '✨ Auto-Generate Trip with AI'}
+                </button>
+              </div>
             </div>
           )}
 

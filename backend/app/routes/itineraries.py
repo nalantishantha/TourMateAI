@@ -56,6 +56,9 @@ def _serialize_itinerary(itinerary):
     return {
         "id": itinerary.id,
         "title": itinerary.title,
+        "description": itinerary.description,
+        "start_location": itinerary.start_location,
+        "end_location": itinerary.end_location,
         "start_date": itinerary.start_date.isoformat() if itinerary.start_date else None,
         "end_date": itinerary.end_date.isoformat() if itinerary.end_date else None,
         "created_at": itinerary.created_at.isoformat() if itinerary.created_at else None,
@@ -164,6 +167,13 @@ def create_itinerary():
     title, error = _clean_title(body.get("title"))
     if error:
         return error
+        
+    description = body.get("description")
+    if description is not None and not isinstance(description, str):
+        return json_error("description must be a string.", 400)
+        
+    start_location = body.get("start_location")
+    end_location = body.get("end_location")
 
     _, start, error = _parse_date_field(body, "start_date")
     if error:
@@ -176,7 +186,13 @@ def create_itinerary():
         return error
 
     itinerary = Itinerary(
-        user_id=g.current_user.id, title=title, start_date=start, end_date=end
+        user_id=g.current_user.id, 
+        title=title, 
+        description=description, 
+        start_location=start_location,
+        end_location=end_location,
+        start_date=start, 
+        end_date=end
     )
     db.session.add(itinerary)
     db.session.commit()

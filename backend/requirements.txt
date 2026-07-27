@@ -39,3 +39,9 @@ pillow==12.3.0
 
 # --- Testing ---
 pytest==9.1.1
+
+# --- AI: Multi-Agent Itinerary Planner (LangGraph) ---
+langgraph>=0.1.19
+langchain>=0.2.14
+langchain-core>=0.2.33
+langchain-google-genai>=1.0.8

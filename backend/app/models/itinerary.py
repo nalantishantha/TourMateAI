@@ -16,6 +16,9 @@ class Itinerary(db.Model):
         index=True,
     )
     title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    start_location = db.Column(db.String(200))
+    end_location = db.Column(db.String(200))
     start_date = db.Column(db.Date)
     end_date = db.Column(db.Date)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

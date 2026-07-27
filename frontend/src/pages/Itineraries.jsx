@@ -24,6 +24,9 @@ function todayIso(offsetDays = 0) {
 function NewTripModal({ onClose }) {
   const navigate = useNavigate()
   const [title, setTitle] = useState('')
+  const [startLocation, setStartLocation] = useState('')
+  const [endLocation, setEndLocation] = useState('')
+  const [description, setDescription] = useState('')
   const [startDate, setStartDate] = useState(todayIso())
   const [endDate, setEndDate] = useState(todayIso(2))
   const [submitting, setSubmitting] = useState(false)
@@ -40,6 +43,9 @@ function NewTripModal({ onClose }) {
     try {
       const itinerary = await createItinerary({
         title: title.trim(),
+        startLocation: startLocation.trim(),
+        endLocation: endLocation.trim(),
+        description: description.trim(),
         startDate,
         endDate,
       })
@@ -77,6 +83,41 @@ function NewTripModal({ onClose }) {
               placeholder="e.g. South coast long weekend"
               maxLength={200}
               autoFocus
+            />
+          </div>
+
+          <div className="it-date-row">
+            <div className="field">
+              <label className="label" htmlFor="trip-from">From</label>
+              <input
+                id="trip-from"
+                className="input"
+                value={startLocation}
+                onChange={(e) => setStartLocation(e.target.value)}
+                placeholder="Starting location (e.g. Colombo)"
+              />
+            </div>
+            <div className="field">
+              <label className="label" htmlFor="trip-to">To</label>
+              <input
+                id="trip-to"
+                className="input"
+                value={endLocation}
+                onChange={(e) => setEndLocation(e.target.value)}
+                placeholder="Destination (e.g. Galle)"
+              />
+            </div>
+          </div>
+
+          <div className="field">
+            <label className="label" htmlFor="trip-description">Trip description (Optional)</label>
+            <textarea
+              id="trip-description"
+              className="input"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="e.g. A beach trip with sea baths and turtles"
+              rows={3}
             />
           </div>
 

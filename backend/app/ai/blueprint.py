@@ -141,3 +141,22 @@ def identify():
             "received_file": image.filename,
         }
     )
+
+
+@ai_bp.post("/itinerary/generate")
+def generate_itinerary_endpoint():
+    """LangGraph multi-agent itinerary generation."""
+    body = request.get_json(silent=True) or {}
+    start_date = body.get("start_date", "")
+    end_date = body.get("end_date", "")
+    preferences = body.get("preferences", {})
+    
+    try:
+        from .planner.graph import generate_itinerary
+        items = generate_itinerary(start_date, end_date, preferences)
+        return jsonify({"items": items})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
