@@ -64,6 +64,9 @@ def _serialize_itinerary(itinerary):
         "created_at": itinerary.created_at.isoformat() if itinerary.created_at else None,
         "item_count": len(itinerary.items),
         "preview_stops": stops,
+        "is_ai_generated": itinerary.is_ai_generated,
+        "ai_plan": itinerary.ai_plan,
+        "thread_id": itinerary.thread_id,
     }
 
 
@@ -184,6 +187,8 @@ def create_itinerary():
     error = _validate_dates(start, end)
     if error:
         return error
+
+    is_ai_generated = bool(body.get("is_ai_generated", False))
 
     itinerary = Itinerary(
         user_id=g.current_user.id, 

@@ -29,6 +29,7 @@ function NewTripModal({ onClose }) {
   const [description, setDescription] = useState('')
   const [startDate, setStartDate] = useState(todayIso())
   const [endDate, setEndDate] = useState(todayIso(2))
+  const [preferences, setPreferences] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
 
@@ -37,9 +38,16 @@ function NewTripModal({ onClose }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
-    if (!title.trim() || datesInvalid || submitting) return
+    if (!destination.trim() || datesInvalid || submitting) return
     setSubmitting(true)
     setError(null)
+    
+    // The title of the itinerary is the destination
+    let title = destination.trim()
+    if (origin.trim()) {
+      title += ` from ${origin.trim()}`
+    }
+
     try {
       const itinerary = await createItinerary({
         title: title.trim(),
@@ -48,8 +56,11 @@ function NewTripModal({ onClose }) {
         description: description.trim(),
         startDate,
         endDate,
+        is_ai_generated: true,
+        preferences: preferences.trim() // Although DB doesn't save preferences directly, AI agent uses it on next page load if we passed it.
       })
-      navigate(`/itineraries/${itinerary.id}`)
+      // Navigate to the AI Trip Viewer 
+      navigate(`/itineraries/${itinerary.id}`, { state: { initialPreferences: preferences.trim() } })
     } catch (err) {
       setError(err?.response?.data?.error || 'Could not create the trip. Please try again.')
       setSubmitting(false)
@@ -64,26 +75,40 @@ function NewTripModal({ onClose }) {
         aria-modal="true"
         aria-labelledby="new-trip-title"
         onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: '600px' }}
       >
         <div className="it-modal-head">
-          <h2 id="new-trip-title">Plan a new trip</h2>
+          <h2 id="new-trip-title">AI Trip Planner</h2>
           <button type="button" className="it-modal-close" onClick={onClose} aria-label="Close">
             ✕
           </button>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="field">
-            <label className="label" htmlFor="trip-title">Trip name</label>
-            <input
-              id="trip-title"
-              className="input"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. South coast long weekend"
-              maxLength={200}
-              autoFocus
-            />
+          <div className="it-date-row">
+            <div className="field">
+              <label className="label" htmlFor="trip-origin">Start from</label>
+              <input
+                id="trip-origin"
+                className="input"
+                value={origin}
+                onChange={(e) => setOrigin(e.target.value)}
+                placeholder="e.g. New York (Optional)"
+                maxLength={200}
+              />
+            </div>
+            <div className="field">
+              <label className="label" htmlFor="trip-dest">To (Destination)</label>
+              <input
+                id="trip-dest"
+                className="input"
+                value={destination}
+                onChange={(e) => setDestination(e.target.value)}
+                placeholder="e.g. Paris"
+                maxLength={200}
+                autoFocus
+              />
+            </div>
           </div>
 
           <div className="it-date-row">
@@ -133,7 +158,7 @@ function NewTripModal({ onClose }) {
               />
             </div>
             <div className="field">
-              <label className="label" htmlFor="trip-end">End date</label>
+              <label className="label" htmlFor="trip-end">To date</label>
               <input
                 id="trip-end"
                 className="input"
@@ -143,6 +168,18 @@ function NewTripModal({ onClose }) {
                 onChange={(e) => setEndDate(e.target.value)}
               />
             </div>
+          </div>
+          
+          <div className="field">
+            <label className="label" htmlFor="trip-prefs">Opinions / Ideas</label>
+            <textarea
+              id="trip-prefs"
+              className="input"
+              value={preferences}
+              onChange={(e) => setPreferences(e.target.value)}
+              placeholder="e.g. I love museums, want to keep it budget-friendly, and prefer morning flights."
+              style={{ minHeight: '80px', resize: 'vertical' }}
+            />
           </div>
 
           <p className={`it-days-hint ${datesInvalid ? 'it-days-hint-error' : ''}`} aria-live="polite">
@@ -162,9 +199,9 @@ function NewTripModal({ onClose }) {
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={!title.trim() || datesInvalid || submitting}
+              disabled={!destination.trim() || datesInvalid || submitting}
             >
-              {submitting ? 'Creating…' : 'Create & start planning'}
+              {submitting ? 'Creating…' : 'Create & Plan with AI'}
             </button>
           </div>
         </form>

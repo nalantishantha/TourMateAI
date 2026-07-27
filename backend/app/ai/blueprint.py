@@ -16,6 +16,8 @@ Contract source of truth: docs/api-contract.md (keep in sync).
 
 from flask import Blueprint, jsonify, request
 
+from .planner import run_travel_agent
+
 # Registered by the app factory at url_prefix="/api/ai", so routes below are
 # the paths *after* that prefix (e.g. "/recommend" -> "/api/ai/recommend").
 ai_bp = Blueprint("ai", __name__)

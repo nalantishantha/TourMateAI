@@ -22,6 +22,10 @@ class Itinerary(db.Model):
     start_date = db.Column(db.Date)
     end_date = db.Column(db.Date)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    is_ai_generated = db.Column(db.Boolean, default=False)
+    ai_plan = db.Column(db.Text)
+    thread_id = db.Column(db.String(100))
 
     user = db.relationship("User", back_populates="itineraries")
     items = db.relationship(
