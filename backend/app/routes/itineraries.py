@@ -22,6 +22,7 @@ Routes (registered under ``/api``):
 """
 
 from datetime import date
+import json
 
 from flask import Blueprint, g, jsonify, request
 
@@ -59,14 +60,13 @@ def _serialize_itinerary(itinerary):
         "description": itinerary.description,
         "start_location": itinerary.start_location,
         "end_location": itinerary.end_location,
+        "stops": json.loads(itinerary.stops) if itinerary.stops else [],
         "start_date": itinerary.start_date.isoformat() if itinerary.start_date else None,
         "end_date": itinerary.end_date.isoformat() if itinerary.end_date else None,
         "created_at": itinerary.created_at.isoformat() if itinerary.created_at else None,
         "item_count": len(itinerary.items),
         "preview_stops": stops,
         "is_ai_generated": itinerary.is_ai_generated,
-        "ai_plan": itinerary.ai_plan,
-        "thread_id": itinerary.thread_id,
     }
 
 
@@ -177,6 +177,11 @@ def create_itinerary():
         
     start_location = body.get("start_location")
     end_location = body.get("end_location")
+    
+    stops_input = body.get("stops", [])
+    if not isinstance(stops_input, list):
+        return json_error("stops must be a list.", 400)
+    stops_json = json.dumps(stops_input) if stops_input else None
 
     _, start, error = _parse_date_field(body, "start_date")
     if error:
@@ -196,8 +201,10 @@ def create_itinerary():
         description=description, 
         start_location=start_location,
         end_location=end_location,
+        stops=stops_json,
         start_date=start, 
-        end_date=end
+        end_date=end,
+        is_ai_generated=is_ai_generated
     )
     db.session.add(itinerary)
     db.session.commit()

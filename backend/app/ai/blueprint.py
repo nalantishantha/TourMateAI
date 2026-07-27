@@ -16,8 +16,6 @@ Contract source of truth: docs/api-contract.md (keep in sync).
 
 from flask import Blueprint, jsonify, request
 
-from .planner import run_travel_agent
-
 # Registered by the app factory at url_prefix="/api/ai", so routes below are
 # the paths *after* that prefix (e.g. "/recommend" -> "/api/ai/recommend").
 ai_bp = Blueprint("ai", __name__)
@@ -157,6 +155,72 @@ def generate_itinerary_endpoint():
         from .planner.graph import generate_itinerary
         items = generate_itinerary(start_date, end_date, preferences)
         return jsonify({"items": items})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+@ai_bp.post("/generate-pdf-summary")
+def generate_pdf_summary():
+    """Generates a markdown summary of a finalized itinerary for PDF export."""
+    body = request.get_json(silent=True) or {}
+    itinerary_id = body.get("itinerary_id")
+    
+    if not itinerary_id:
+        return jsonify({"error": "itinerary_id is required"}), 400
+        
+    from ..models import db, Itinerary
+    itinerary = Itinerary.query.get(itinerary_id)
+    
+    if not itinerary:
+        return jsonify({"error": "Itinerary not found"}), 404
+        
+    try:
+        from langchain_openai import ChatOpenAI
+        from langchain_core.messages import SystemMessage, HumanMessage
+        import os
+        
+        OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+        if not OPENAI_API_KEY:
+            return jsonify({"error": "OPENAI_API_KEY is missing in .env"}), 500
+            
+        llm = ChatOpenAI(model="gpt-4o", api_key=OPENAI_API_KEY, temperature=0.5)
+        
+        items = sorted(itinerary.items, key=lambda x: (x.day_number, x.id))
+        
+        start = itinerary.start_date or "TBD"
+        end = itinerary.end_date or "TBD"
+        itinerary_text = f"Trip: {itinerary.title}\nDates: {start} to {end}\n\n"
+        
+        current_day = 0
+        for item in items:
+            if item.day_number != current_day:
+                current_day = item.day_number
+                itinerary_text += f"\nDay {current_day}:\n"
+            
+            attraction_name = item.attraction.name if item.attraction else "Unknown Place"
+            itinerary_text += f"- {attraction_name}\n"
+            
+        system_prompt = """You are a professional travel document generator. 
+The user has finalized their trip and wants a beautiful Markdown document that they can download as a PDF.
+Write a 1-page summary of the itinerary provided.
+Include these sections:
+# [Trip Name]
+## Trip Summary (Dates, total places)
+## Day-by-Day Itinerary (add brief engaging descriptions of each place based on your general knowledge)
+## Practical Tips (a few general travel tips for this route)
+
+Do not use conversational filler. Just return the markdown."""
+
+        messages = [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=itinerary_text)
+        ]
+        
+        response = llm.invoke(messages)
+        return jsonify({"markdown": response.content})
+        
     except Exception as e:
         import traceback
         traceback.print_exc()

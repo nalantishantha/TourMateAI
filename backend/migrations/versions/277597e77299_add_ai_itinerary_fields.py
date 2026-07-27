@@ -19,11 +19,7 @@ def upgrade():
     # Only add the columns for AI Planner
     with op.batch_alter_table('itineraries', schema=None) as batch_op:
         batch_op.add_column(sa.Column('is_ai_generated', sa.Boolean(), nullable=True))
-        batch_op.add_column(sa.Column('ai_plan', sa.Text(), nullable=True))
-        batch_op.add_column(sa.Column('thread_id', sa.String(length=100), nullable=True))
 
 def downgrade():
     with op.batch_alter_table('itineraries', schema=None) as batch_op:
-        batch_op.drop_column('thread_id')
-        batch_op.drop_column('ai_plan')
         batch_op.drop_column('is_ai_generated')

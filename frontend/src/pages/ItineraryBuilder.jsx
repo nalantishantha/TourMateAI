@@ -11,7 +11,7 @@
 // to one day at a time, navigated by the day strip / prev-next controls.
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useLocation } from 'react-router-dom'
 import AttractionImage from '../components/explore/AttractionImage'
 import AttractionPicker from '../components/itinerary/AttractionPicker'
 import { attractionPhoto, scenes } from '../assets/photos'
@@ -347,10 +347,11 @@ function BuilderSkeleton() {
   )
 }
 
-import AITripViewer from './AITripViewer'
+// import AITripViewer from './AITripViewer'
 
 export default function ItineraryBuilder() {
   const { id } = useParams()
+  const location = useLocation()
 
   const [itinerary, setItinerary] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -366,6 +367,10 @@ export default function ItineraryBuilder() {
   const [drag, setDrag] = useState(null) // { itemId, day }
   const dragChanged = useRef(false)
   const preDragItems = useRef(null)
+  
+  const [generatingPdf, setGeneratingPdf] = useState(false)
+  const [pdfError, setPdfError] = useState(null)
+  const pdfContainerRef = useRef(null)
 
   // Which day the day-strip highlights; on narrow viewports it's also the one
   // day shown (single-day-at-a-time mode — the rest hide via CSS).
@@ -737,7 +742,7 @@ export default function ItineraryBuilder() {
 
   // ---- Items: add / remove / reorder / AI generate ---------------------------
 
-  const handleAutoGenerate = async () => {
+  const handleAutoGenerate = async (prefsOverride = null) => {
     setSaveState('saving')
     try {
       const generatedItems = await generateItineraryWithAI({
@@ -746,7 +751,9 @@ export default function ItineraryBuilder() {
         preferences: { 
           description: itinerary.description,
           start_location: itinerary.start_location,
-          end_location: itinerary.end_location
+          end_location: itinerary.end_location,
+          stops: itinerary.stops,
+          user_preferences: prefsOverride || location.state?.initialPreferences
         } 
       })
       
@@ -844,13 +851,60 @@ export default function ItineraryBuilder() {
     }
   }
 
+  useEffect(() => {
+    // Auto-generate if it's a new AI itinerary
+    if (itinerary?.is_ai_generated && itinerary?.items?.length === 0 && location.state?.initialPreferences) {
+      handleAutoGenerate(location.state.initialPreferences)
+    }
+  }, [itinerary?.is_ai_generated])
+
+  const handleGeneratePdf = async () => {
+    setGeneratingPdf(true)
+    setPdfError(null)
+    try {
+       const { default: api } = await import('../services/api')
+       const response = await api.post('/ai/generate-pdf-summary', { itinerary_id: itinerary.id })
+       
+       if (pdfContainerRef.current) {
+          const ReactMarkdown = (await import('react-markdown')).default
+          const { createRoot } = await import('react-dom/client')
+          
+          const tempDiv = document.createElement('div')
+          tempDiv.className = 'markdown-body'
+          tempDiv.style.padding = '2rem'
+          tempDiv.style.background = 'white'
+          tempDiv.style.color = 'black'
+          
+          pdfContainerRef.current.appendChild(tempDiv)
+          const root = createRoot(tempDiv)
+          root.render(<ReactMarkdown>{response.data.markdown}</ReactMarkdown>)
+          
+          setTimeout(async () => {
+             const html2pdf = (await import('html2pdf.js')).default
+             const opt = {
+               margin: 10,
+               filename: `${itinerary.title.replace(/\s+/g, '_')}_Plan.pdf`,
+               image: { type: 'jpeg', quality: 0.98 },
+               html2canvas: { scale: 2 },
+               jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+             }
+             await html2pdf().from(tempDiv).set(opt).save()
+             
+             root.unmount()
+             pdfContainerRef.current.innerHTML = ''
+             setGeneratingPdf(false)
+          }, 500)
+       }
+    } catch (err) {
+       console.error(err)
+       setPdfError('Failed to generate PDF')
+       setGeneratingPdf(false)
+    }
+  }
+
   // ---- Render ------------------------------------------------------------------
 
   if (loading) return <BuilderSkeleton />
-
-  if (itinerary?.is_ai_generated) {
-    return <AITripViewer initialItinerary={itinerary} />
-  }
 
   if (loadError || !itinerary) {
     return (
@@ -872,18 +926,24 @@ export default function ItineraryBuilder() {
 
   return (
     <div className="page it-page">
-      <Link to="/itineraries" className="detail-back">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path
-            d="M19 12H5m0 0 6-6m-6 6 6 6"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        My itineraries
-      </Link>
+      <div style={{ display: 'none' }} ref={pdfContainerRef} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Link to="/itineraries" className="detail-back">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+              d="M19 12H5m0 0 6-6m-6 6 6 6"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          My itineraries
+        </Link>
+        <button className="btn btn-primary" onClick={handleGeneratePdf} disabled={generatingPdf}>
+          {generatingPdf ? 'Generating PDF...' : 'Download PDF'}
+        </button>
+      </div>
 
       {/* Trip cover: photo hero with the editable title, then a slim bar for
           dates + save status so form controls stay off the photograph. */}
@@ -1030,7 +1090,7 @@ export default function ItineraryBuilder() {
                 <button
                   type="button"
                   className="btn btn-secondary"
-                  onClick={handleAutoGenerate}
+                  onClick={() => handleAutoGenerate()}
                   disabled={saveState === 'saving'}
                 >
                   {saveState === 'saving' ? 'Generating...' : '✨ Auto-Generate Trip with AI'}

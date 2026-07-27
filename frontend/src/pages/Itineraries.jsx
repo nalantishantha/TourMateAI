@@ -23,9 +23,9 @@ function todayIso(offsetDays = 0) {
 /** Modal form: trip title + dates, with a live day-count readout. */
 function NewTripModal({ onClose }) {
   const navigate = useNavigate()
-  const [title, setTitle] = useState('')
-  const [startLocation, setStartLocation] = useState('')
-  const [endLocation, setEndLocation] = useState('')
+  const [origin, setOrigin] = useState('')
+  const [destination, setDestination] = useState('')
+  const [stops, setStops] = useState([])
   const [description, setDescription] = useState('')
   const [startDate, setStartDate] = useState(todayIso())
   const [endDate, setEndDate] = useState(todayIso(2))
@@ -51,16 +51,18 @@ function NewTripModal({ onClose }) {
     try {
       const itinerary = await createItinerary({
         title: title.trim(),
-        startLocation: startLocation.trim(),
-        endLocation: endLocation.trim(),
+        startLocation: origin.trim(),
+        endLocation: destination.trim(),
+        stops: stops.map(s => s.trim()).filter(s => s),
         description: description.trim(),
         startDate,
         endDate,
         is_ai_generated: true,
-        preferences: preferences.trim() // Although DB doesn't save preferences directly, AI agent uses it on next page load if we passed it.
       })
+      
+      const fullPreferences = preferences.trim()
       // Navigate to the AI Trip Viewer 
-      navigate(`/itineraries/${itinerary.id}`, { state: { initialPreferences: preferences.trim() } })
+      navigate(`/itineraries/${itinerary.id}`, { state: { initialPreferences: fullPreferences } })
     } catch (err) {
       setError(err?.response?.data?.error || 'Could not create the trip. Please try again.')
       setSubmitting(false)
@@ -93,7 +95,7 @@ function NewTripModal({ onClose }) {
                 className="input"
                 value={origin}
                 onChange={(e) => setOrigin(e.target.value)}
-                placeholder="e.g. New York (Optional)"
+                placeholder="e.g. Colombo (Optional)"
                 maxLength={200}
               />
             </div>
@@ -104,34 +106,46 @@ function NewTripModal({ onClose }) {
                 className="input"
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
-                placeholder="e.g. Paris"
+                placeholder="e.g. Galle"
                 maxLength={200}
                 autoFocus
               />
             </div>
           </div>
-
-          <div className="it-date-row">
-            <div className="field">
-              <label className="label" htmlFor="trip-from">From</label>
-              <input
-                id="trip-from"
-                className="input"
-                value={startLocation}
-                onChange={(e) => setStartLocation(e.target.value)}
-                placeholder="Starting location (e.g. Colombo)"
-              />
-            </div>
-            <div className="field">
-              <label className="label" htmlFor="trip-to">To</label>
-              <input
-                id="trip-to"
-                className="input"
-                value={endLocation}
-                onChange={(e) => setEndLocation(e.target.value)}
-                placeholder="Destination (e.g. Galle)"
-              />
-            </div>
+          
+          <div className="field">
+            <label className="label">Stops (Optional)</label>
+            {stops.map((stop, index) => (
+              <div key={index} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <input
+                  className="input"
+                  value={stop}
+                  onChange={(e) => {
+                    const newStops = [...stops]
+                    newStops[index] = e.target.value
+                    setStops(newStops)
+                  }}
+                  placeholder="e.g. Kandy"
+                  maxLength={200}
+                  style={{ flex: 1 }}
+                />
+                <button 
+                  type="button" 
+                  className="btn btn-ghost" 
+                  onClick={() => setStops(stops.filter((_, i) => i !== index))}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+            <button 
+              type="button" 
+              className="btn btn-ghost" 
+              onClick={() => setStops([...stops, ''])}
+              style={{ padding: '0.25rem 0.5rem', fontSize: '0.875rem' }}
+            >
+              + Add Stop
+            </button>
           </div>
 
           <div className="field">
@@ -142,7 +156,7 @@ function NewTripModal({ onClose }) {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="e.g. A beach trip with sea baths and turtles"
-              rows={3}
+              rows={2}
             />
           </div>
 

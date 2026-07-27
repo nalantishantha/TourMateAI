@@ -12,6 +12,7 @@ class PlannerState(TypedDict):
     start_lng: float
     target_lat: float
     target_lng: float
+    waypoints: list[dict] # [{"lat": lat, "lng": lng, "name": name}]
     radius_km: float
     refined_interests: list[str]
     

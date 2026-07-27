@@ -64,22 +64,32 @@ def intent_agent(state: PlannerState) -> PlannerState:
     description = preferences.get("description", "")
     start_loc_pref = preferences.get("start_location", "")
     end_loc_pref = preferences.get("end_location", "")
+    stops_pref = preferences.get("stops", [])
     
     # Base defaults
     target_lat, target_lng = 7.8731, 80.7718
     start_lat, start_lng = None, None
     radius_km = 500.0
     refined_interests = ["General tourism"]
+    waypoints = []
     
-    # Geocode explicit start and end if provided
+    # Geocode explicit start
     if start_loc_pref:
         start_lat, start_lng = geocode_location(start_loc_pref, target_lat, target_lng)
         logger.info(f"Geocoded From: {start_loc_pref} to {start_lat}, {start_lng}")
         
+    # Geocode stops
+    for stop in stops_pref:
+        if stop and stop.strip():
+            slat, slng = geocode_location(stop, target_lat, target_lng)
+            waypoints.append({"name": stop, "lat": slat, "lng": slng})
+            logger.info(f"Geocoded Stop: {stop} to {slat}, {slng}")
+        
+    # Geocode explicit end
     if end_loc_pref:
         target_lat, target_lng = geocode_location(end_loc_pref, target_lat, target_lng)
+        waypoints.append({"name": end_loc_pref, "lat": target_lat, "lng": target_lng})
         logger.info(f"Geocoded To: {end_loc_pref} to {target_lat}, {target_lng}")
-        # When explicit end location is provided, default radius shrinks
         radius_km = 100.0
 
     # Ask LLM to refine interests from description, and possibly guess location if 'To' was empty
@@ -120,6 +130,7 @@ def intent_agent(state: PlannerState) -> PlannerState:
                 # If they didn't provide an explicit 'To' location, use the LLM's guess
                 if not end_loc_pref and location_name and location_name.strip():
                     target_lat, target_lng = geocode_location(location_name, target_lat, target_lng)
+                    waypoints.append({"name": location_name, "lat": target_lat, "lng": target_lng})
                     logger.info(f"Geocoded LLM guessed To: {location_name} to {target_lat}, {target_lng}")
         except Exception as e:
             logger.error(f"Failed to parse intent: {e}")
@@ -133,6 +144,7 @@ def intent_agent(state: PlannerState) -> PlannerState:
         "start_lng": start_lng,
         "target_lat": target_lat, 
         "target_lng": target_lng,
+        "waypoints": waypoints,
         "radius_km": radius_km, 
         "refined_interests": refined_interests
     }
@@ -142,19 +154,27 @@ def discovery_agent(state: PlannerState) -> PlannerState:
     logger.info("Running discovery_agent")
     llm = get_llm()
     
+    start_lat = state.get("start_lat")
+    start_lng = state.get("start_lng")
     target_lat = state.get("target_lat", 7.8731)
     target_lng = state.get("target_lng", 80.7718)
+    waypoints = state.get("waypoints", [])
     radius_km = state.get("radius_km", 500.0)
     interests = state.get("refined_interests", [])
     
     places = Attraction.query.all()
     all_places = [{"id": p.id, "name": p.name, "category": p.category, "description": p.description, "latitude": p.latitude, "longitude": p.longitude} for p in places]
     
-    # Haversine geographic filtering
+    # Haversine geographic filtering: include if within radius of start, target, or any waypoint
     available_places = []
     for p in all_places:
-        dist = haversine_distance(target_lat, target_lng, p["latitude"], p["longitude"])
-        if dist <= radius_km:
+        min_dist = haversine_distance(target_lat, target_lng, p["latitude"], p["longitude"])
+        if start_lat is not None and start_lng is not None:
+            min_dist = min(min_dist, haversine_distance(start_lat, start_lng, p["latitude"], p["longitude"]))
+        for w in waypoints:
+            min_dist = min(min_dist, haversine_distance(w["lat"], w["lng"], p["latitude"], p["longitude"]))
+            
+        if min_dist <= radius_km:
             available_places.append(p)
             
     if not available_places:
@@ -162,12 +182,14 @@ def discovery_agent(state: PlannerState) -> PlannerState:
     
     prompt = f"""
     You are a travel recommender for Sri Lanka.
+    The user is traveling on a route. Key stops include: {', '.join([w['name'] for w in waypoints]) if waypoints else 'General exploration'}
+    
     The user is interested in: {', '.join(interests) if interests else 'General tourism'}
     
-    Here are the places that are geographically close to their requested area:
+    Here are the places that are geographically close to their route:
     {json.dumps(available_places, indent=2)}
     
-    Select the top places that best match their interests from this list.
+    Select the top places that best match their interests and would make logical stops along this route.
     Return ONLY a JSON array of their integer IDs.
     Example: [7, 15, 3]
     """
@@ -201,13 +223,13 @@ def discovery_agent(state: PlannerState) -> PlannerState:
     return {"candidate_attractions": candidates}
 
 def scheduler_agent(state: PlannerState) -> PlannerState:
-    """Distributes attractions across days using geographical chaining."""
-    logger.info("Running geographically-aware scheduler_agent")
+    """Distributes attractions across days using waypoint chaining."""
+    logger.info("Running waypoint-aware scheduler_agent")
     candidates = state.get("candidate_attractions", [])
     
-    # We start Day 1 from the "From" location coordinates
     current_lat = state.get("start_lat", 7.8731)
     current_lng = state.get("start_lng", 80.7718)
+    waypoints = list(state.get("waypoints", []))
     
     start_date = state.get("start_date")
     end_date = state.get("end_date")
@@ -226,19 +248,30 @@ def scheduler_agent(state: PlannerState) -> PlannerState:
     available = list(candidates)
     
     MAX_PLACES_PER_DAY = 3
-    MAX_DISTANCE_KM = 50.0
+    MAX_JUMP_KM = 30.0 # user requested to reduce 50km to 30km
     
     for day in range(1, total_days + 1):
         stops_today = 0
         while stops_today < MAX_PLACES_PER_DAY and available:
-            # Sort available places by distance to current location
-            available.sort(key=lambda p: haversine_distance(current_lat, current_lng, p["latitude"], p["longitude"]))
             
+            is_exploring = (len(waypoints) == 0)
+            
+            def score_place(p):
+                dist_from_current = haversine_distance(current_lat, current_lng, p["latitude"], p["longitude"])
+                if is_exploring:
+                    # If exploring destination, just pick nearest
+                    return dist_from_current
+                # If en-route, pick places that minimize detour to next waypoint
+                dist_to_target = haversine_distance(p["latitude"], p["longitude"], waypoints[0]["lat"], waypoints[0]["lng"])
+                return dist_from_current + dist_to_target
+                
+            available.sort(key=score_place)
             best_place = available[0]
-            dist = haversine_distance(current_lat, current_lng, best_place["latitude"], best_place["longitude"])
             
-            # If the closest place is too far, and we already have stops today, we can stop early and move to next day
-            if stops_today > 0 and dist > MAX_DISTANCE_KM:
+            dist_from_current = haversine_distance(current_lat, current_lng, best_place["latitude"], best_place["longitude"])
+            
+            # Prevent jumping too far at once
+            if stops_today > 0 and dist_from_current > MAX_JUMP_KM:
                 if len(available) > 1:
                     break
                     
@@ -252,6 +285,13 @@ def scheduler_agent(state: PlannerState) -> PlannerState:
             
             current_lat = best_place["latitude"]
             current_lng = best_place["longitude"]
+            
+            # Check if we arrived at the current waypoint
+            if not is_exploring:
+                dist_to_waypoint = haversine_distance(current_lat, current_lng, waypoints[0]["lat"], waypoints[0]["lng"])
+                if dist_to_waypoint <= 20.0:
+                    logger.info(f"Reached waypoint {waypoints[0].get('name')}")
+                    waypoints.pop(0)
             
             available.pop(0)
             stops_today += 1
