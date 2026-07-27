@@ -95,21 +95,40 @@ def search_internet(query: str) -> str:
         return f"Internet search is currently unreachable ({str(e)})."
 
 @tool
-def get_transport_fares(route: str = None) -> str:
+def search_transport_fares(query: str) -> str:
     """
-    Get the latest up-to-date public transport fares for Sri Lanka (buses, trains, tuk-tuks).
-    Always use this tool when the user asks about transport costs, bus tickets, or train prices.
+    Search the real-time National Transport Commission PDF database for up-to-date bus and transport fares in Sri Lanka.
+    Use this tool whenever the user asks about bus tickets, expressway fares, or specific transport costs.
+    Provide the specific route or query (e.g. 'Colombo to Galle bus fare' or 'expressway fares').
     """
-    return (
-        "CURRENT LATEST FARES IN SRI LANKA:\n"
-        "- Local Bus (Non-AC): Minimum fare is around LKR 40-50. Short trips (10-20km) cost LKR 100-250. "
-        "Long distance (e.g. Colombo to Mirissa/Galle) is LKR 800-1200.\n"
-        "- Highway Bus (AC): Colombo to Galle/Matara/Mirissa is LKR 1500-2500 depending on the route.\n"
-        "- Trains: 3rd class is very cheap (LKR 100-400). 2nd class is LKR 400-1000. 1st class reserved (e.g. Colombo to Ella or Kandy) is LKR 2000-4000.\n"
-        "- Tuk-tuks: Usually LKR 100-150 per kilometer. Always negotiate before starting the ride or use a ride-hailing app like PickMe/Uber.\n"
-    )
+    try:
+        import os
+        from langchain_chroma import Chroma
+        from langchain_openai import OpenAIEmbeddings
 
-tools = [search_attractions, get_weather, search_internet, get_transport_fares]
+        # Agent is in backend/app/ai/chatbot/agent.py
+        # Base dir is backend/
+        BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+        DB_DIR = os.path.join(BASE_DIR, "data", "chroma_fares")
+        
+        if not os.path.exists(DB_DIR):
+            return "Error: Transport fare database is currently empty or rebuilding. Try again later."
+            
+        embeddings = OpenAIEmbeddings()
+        vectorstore = Chroma(persist_directory=DB_DIR, embedding_function=embeddings)
+        docs = vectorstore.similarity_search(query, k=3)
+        
+        if not docs:
+            return "No relevant fare information found."
+            
+        result = "Found the following fare information from the NTC database:\n"
+        for doc in docs:
+            result += f"- {doc.page_content}\n"
+        return result
+    except Exception as e:
+        return f"Error retrieving fares: {str(e)}"
+
+tools = [search_attractions, get_weather, search_internet, search_transport_fares]
 
 # --- Agent Setup ---
 
@@ -122,7 +141,7 @@ def _get_agent_executor():
          "Always be friendly, concise, and helpful. "
          "When asked about specific places, activities, or recommendations in Sri Lanka, ALWAYS use the `search_attractions` tool to find accurate information from our database. "
          "When asked about the weather, use the `get_weather` tool. "
-         "When asked about transport costs, bus tickets, trains, or tuk-tuks, ALWAYS use the `get_transport_fares` tool to get the most up-to-date prices. "
+         "When asked about transport costs, bus tickets, trains, or tuk-tuks, ALWAYS use the `search_transport_fares` tool to get the most up-to-date prices from the NTC database. "
          "When asked about general knowledge, current events, or things that our database/weather tools don't know, use the `search_internet` tool to find the answer. "
          "For other costs (food, accommodation), provide reasonable estimates based on typical Sri Lankan tourism costs."
     )

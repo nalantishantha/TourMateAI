@@ -167,3 +167,24 @@ def retraining_history():
             },
         }
     )
+
+
+@admin_bp.post("/retraining/ingest_fares")
+@require_admin
+def ingest_fares_endpoint():
+    """Trigger the manual ingestion of NTC bus fares."""
+    try:
+        import sys
+        import os
+        import subprocess
+        
+        script_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), "scripts", "ingest_fares.py")
+        
+        result = subprocess.run([sys.executable, script_path], capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            return jsonify({"status": "success", "message": "Fares ingested successfully.", "log": result.stdout})
+        else:
+            return jsonify({"status": "error", "message": "Fares ingestion failed.", "log": result.stderr}), 500
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
