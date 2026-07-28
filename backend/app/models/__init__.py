@@ -7,6 +7,7 @@ Flask-Migrate/Alembic can autogenerate migrations. The app factory imports it.
 from ..extensions import db
 from .admin_action import AdminAction
 from .attraction import Attraction
+from .chat_session import ChatSession
 from .chat_log import ChatLog
 from .feedback import Feedback
 from .interaction import Interaction, InteractionType
@@ -24,6 +25,7 @@ __all__ = [
     "Itinerary",
     "ItineraryItem",
     "Feedback",
+    "ChatSession",
     "ChatLog",
     "UploadedImage",
 ]

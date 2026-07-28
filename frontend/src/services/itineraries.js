@@ -10,11 +10,16 @@ export async function fetchItineraries() {
   return data.itineraries // [{ id, title, start_date, end_date, item_count, preview_stops }]
 }
 
-export async function createItinerary({ title, startDate, endDate }) {
+export async function createItinerary({ title, description, startLocation, endLocation, stops, startDate, endDate, is_ai_generated }) {
   const { data } = await api.post('/itineraries', {
     title,
+    description,
+    start_location: startLocation || null,
+    end_location: endLocation || null,
+    stops: stops || [],
     start_date: startDate || null,
     end_date: endDate || null,
+    is_ai_generated: is_ai_generated || false,
   })
   return data.itinerary // detail shape (items: [])
 }
@@ -69,4 +74,14 @@ export async function fetchDayRoute(id, dayNumber, { optimize = false } = {}) {
     `/itineraries/${id}/days/${dayNumber}/route${optimize ? '?optimize=true' : ''}`
   )
   return data
+}
+
+// LangGraph AI Auto-Generation
+export async function generateItineraryWithAI({ startDate, endDate, preferences }) {
+  const { data } = await api.post('/ai/itinerary/generate', {
+    start_date: startDate,
+    end_date: endDate,
+    preferences,
+  })
+  return data.items
 }

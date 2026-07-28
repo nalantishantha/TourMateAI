@@ -22,6 +22,12 @@ class ChatLog(db.Model):
         nullable=False,
         index=True,
     )
+    session_id = db.Column(
+        db.Integer,
+        db.ForeignKey("ChatSessions.id", ondelete="CASCADE"),
+        nullable=True, # Will be set to False after migration creates default sessions
+        index=True,
+    )
     message = db.Column(db.Text, nullable=False)
     response = db.Column(db.Text)  # filled in by the chatbot
     # Admin chatbot-accuracy review. NULL = unreviewed; otherwise one of
@@ -35,6 +41,7 @@ class ChatLog(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship("User", back_populates="chat_logs")
+    session = db.relationship("ChatSession", back_populates="chat_logs")
 
     def __repr__(self):
         return f"<ChatLog {self.id} u{self.user_id}>"

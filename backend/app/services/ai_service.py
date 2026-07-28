@@ -298,20 +298,8 @@ def _mock_chatbot_reply(user_id, message, conversation_history):
 # --- real (teammate's RAG chatbot — not built yet) ----------------------------
 
 def _real_chatbot_reply(user_id, message, conversation_history):
-    """TODO: route to the real RAG chatbot.
-
-    When ``backend/app/ai/chatbot/`` is ready, import and call it here, e.g.:
-
-        from ..ai.chatbot import answer
-        return answer(user_id=user_id, message=message,
-                      conversation_history=conversation_history)
-
-    It must return {"reply": str, "suggested_attractions": list[int]} per
-    module contract §2 (and ground its answer in retrieved KB context).
-    """
-    raise NotImplementedError(
-        "Real chatbot not wired up yet; set USE_MOCK_AI=True in .env."
-    )
+    from ..ai.chatbot.agent import answer
+    return answer(user_id=user_id, message=message, conversation_history=conversation_history)
 
 
 # =============================================================================

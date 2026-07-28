@@ -15,6 +15,7 @@ import { Fragment, useMemo, useState } from 'react'
 const MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
 
 function coord(point) {
+  if (typeof point === 'string') return point
   return `${point.latitude},${point.longitude}`
 }
 
@@ -70,7 +71,7 @@ function externalUrl(stops, origin) {
   )
 }
 
-export default function TripMapCard({ items, totalDays, routes }) {
+export default function TripMapCard({ items, totalDays, routes, startLocation }) {
   const [selectedDay, setSelectedDay] = useState(1)
   const day = Math.min(selectedDay, totalDays) // trip may have shrunk
 
@@ -100,17 +101,42 @@ export default function TripMapCard({ items, totalDays, routes }) {
 
   // The day's stops that actually have coordinates, in planned order.
   const stops = useMemo(
-    () =>
-      items
-        .filter((i) => i.day_number === day)
-        .map((i) => i.attraction)
-        .filter(
-          (a) =>
-            a &&
-            typeof a.latitude === 'number' &&
-            typeof a.longitude === 'number'
-        ),
-    [items, day]
+    () => {
+      const validItems = items.filter(
+        (i) =>
+          i.attraction &&
+          typeof i.attraction.latitude === 'number' &&
+          typeof i.attraction.longitude === 'number'
+      );
+      
+      const dayItems = validItems.filter((i) => i.day_number === day);
+      if (dayItems.length === 0) return [];
+      
+      const finalStops = dayItems.map(i => i.attraction);
+      
+      if (day === 1 && startLocation) {
+        finalStops.unshift(startLocation);
+      } else if (day > 1) {
+        const prevItems = validItems.filter((i) => i.day_number < day);
+        if (prevItems.length > 0) {
+          finalStops.unshift(prevItems[prevItems.length - 1].attraction);
+        }
+      }
+      
+      if (day === totalDays && totalDays > 1) {
+        if (startLocation) {
+          finalStops.push(startLocation);
+        } else {
+          const firstOverall = validItems[0].attraction;
+          if (finalStops[finalStops.length - 1]?.id !== firstOverall.id) {
+            finalStops.push(firstOverall);
+          }
+        }
+      }
+      
+      return finalStops;
+    },
+    [items, day, totalDays, startLocation]
   )
 
   const dayNumbers = Array.from({ length: totalDays }, (_, i) => i + 1)
@@ -217,12 +243,14 @@ export default function TripMapCard({ items, totalDays, routes }) {
 
           <ol className="it-map-stops">
             {stops.map((stop, index) => (
-              <Fragment key={`${stop.id}-${index}`}>
+              <Fragment key={`${typeof stop === 'string' ? stop : stop.id}-${index}`}>
                 <li className="it-map-stop">
                   <span className="it-map-stop-num" aria-hidden="true">
                     {index + 1}
                   </span>
-                  <span className="it-map-stop-name">{stop.name}</span>
+                  <span className="it-map-stop-name">
+                    {typeof stop === 'string' ? `Start: ${stop}` : stop.name}
+                  </span>
                 </li>
                 {legs[index] && (
                   <li className="it-map-leg" aria-hidden="true">

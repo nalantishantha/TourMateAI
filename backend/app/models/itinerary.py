@@ -16,9 +16,15 @@ class Itinerary(db.Model):
         index=True,
     )
     title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    start_location = db.Column(db.String(200))
+    end_location = db.Column(db.String(200))
+    stops = db.Column(db.Text)
     start_date = db.Column(db.Date)
     end_date = db.Column(db.Date)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    is_ai_generated = db.Column(db.Boolean, default=False)
 
     user = db.relationship("User", back_populates="itineraries")
     items = db.relationship(

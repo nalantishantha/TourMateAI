@@ -22,6 +22,7 @@ Routes (registered under ``/api``):
 """
 
 from datetime import date
+import json
 
 from flask import Blueprint, g, jsonify, request
 
@@ -56,11 +57,16 @@ def _serialize_itinerary(itinerary):
     return {
         "id": itinerary.id,
         "title": itinerary.title,
+        "description": itinerary.description,
+        "start_location": itinerary.start_location,
+        "end_location": itinerary.end_location,
+        "stops": json.loads(itinerary.stops) if itinerary.stops else [],
         "start_date": itinerary.start_date.isoformat() if itinerary.start_date else None,
         "end_date": itinerary.end_date.isoformat() if itinerary.end_date else None,
         "created_at": itinerary.created_at.isoformat() if itinerary.created_at else None,
         "item_count": len(itinerary.items),
         "preview_stops": stops,
+        "is_ai_generated": itinerary.is_ai_generated,
     }
 
 
@@ -164,6 +170,18 @@ def create_itinerary():
     title, error = _clean_title(body.get("title"))
     if error:
         return error
+        
+    description = body.get("description")
+    if description is not None and not isinstance(description, str):
+        return json_error("description must be a string.", 400)
+        
+    start_location = body.get("start_location")
+    end_location = body.get("end_location")
+    
+    stops_input = body.get("stops", [])
+    if not isinstance(stops_input, list):
+        return json_error("stops must be a list.", 400)
+    stops_json = json.dumps(stops_input) if stops_input else None
 
     _, start, error = _parse_date_field(body, "start_date")
     if error:
@@ -175,8 +193,18 @@ def create_itinerary():
     if error:
         return error
 
+    is_ai_generated = bool(body.get("is_ai_generated", False))
+
     itinerary = Itinerary(
-        user_id=g.current_user.id, title=title, start_date=start, end_date=end
+        user_id=g.current_user.id, 
+        title=title, 
+        description=description, 
+        start_location=start_location,
+        end_location=end_location,
+        stops=stops_json,
+        start_date=start, 
+        end_date=end,
+        is_ai_generated=is_ai_generated
     )
     db.session.add(itinerary)
     db.session.commit()
@@ -387,15 +415,73 @@ def day_route(itinerary_id, day_number):
     if not itinerary:
         return json_error("Itinerary not found.", 404)
 
-    stops = [
+    valid_items = [
         item
         for item in itinerary.items
-        if item.day_number == day_number
-        and item.attraction
+        if item.attraction
         and item.attraction.latitude is not None
         and item.attraction.longitude is not None
     ]
-    if len(stops) < 2:
+    
+    if not valid_items:
+        return json_error("This itinerary has no valid stops to route.", 400)
+
+    total_days = max(item.day_number for item in valid_items)
+    
+    stops = [item for item in valid_items if item.day_number == day_number]
+
+    coords = [(s.attraction.latitude, s.attraction.longitude) for s in stops]
+    response_stops = [
+        {
+            "item_id": s.id,
+            "attraction_id": s.attraction_id,
+            "name": s.attraction.name,
+            "day_number": s.day_number,
+        }
+        for s in stops
+    ]
+
+    if day_number == 1 and itinerary.start_location:
+        coords.insert(0, itinerary.start_location)
+        response_stops.insert(0, {
+            "item_id": "start_location",
+            "attraction_id": None,
+            "name": f"Start: {itinerary.start_location}",
+            "day_number": 1,
+        })
+    elif day_number > 1:
+        prev_items = [item for item in valid_items if item.day_number < day_number]
+        if prev_items:
+            prev_last = prev_items[-1]
+            coords.insert(0, (prev_last.attraction.latitude, prev_last.attraction.longitude))
+            response_stops.insert(0, {
+                "item_id": prev_last.id,
+                "attraction_id": prev_last.attraction_id,
+                "name": prev_last.attraction.name,
+                "day_number": prev_last.day_number,
+            })
+
+    if day_number == total_days and total_days > 1:
+        if itinerary.start_location:
+            coords.append(itinerary.start_location)
+            response_stops.append({
+                "item_id": "start_location",
+                "attraction_id": None,
+                "name": f"Start: {itinerary.start_location}",
+                "day_number": total_days,
+            })
+        else:
+            first_overall = valid_items[0]
+            if not stops or stops[-1].id != first_overall.id:
+                coords.append((first_overall.attraction.latitude, first_overall.attraction.longitude))
+                response_stops.append({
+                    "item_id": first_overall.id,
+                    "attraction_id": first_overall.attraction_id,
+                    "name": first_overall.attraction.name,
+                    "day_number": first_overall.day_number,
+                })
+
+    if len(coords) < 2:
         return json_error(
             "This day needs at least two stops with map locations to route.", 400
         )
@@ -404,7 +490,6 @@ def day_route(itinerary_id, day_number):
         "1", "true", "yes", "on",
     )
 
-    coords = [(s.attraction.latitude, s.attraction.longitude) for s in stops]
     try:
         route = get_route(coords, optimize=optimize)
     except DirectionsUnavailable as exc:
@@ -415,16 +500,14 @@ def day_route(itinerary_id, day_number):
     response = {
         "available": True,
         "day_number": day_number,
-        "stops": [
-            {
-                "item_id": s.id,
-                "attraction_id": s.attraction_id,
-                "name": s.attraction.name,
-            }
-            for s in stops
-        ],
+        "stops": response_stops,
         "route": route,
     }
     if optimized_order is not None:
-        response["suggested_item_order"] = [stops[i].id for i in optimized_order]
+        response["suggested_item_order"] = [
+            response_stops[i]["item_id"]
+            for i in optimized_order
+            if response_stops[i]["day_number"] == day_number
+            and isinstance(response_stops[i]["item_id"], int)
+        ]
     return jsonify(response)
