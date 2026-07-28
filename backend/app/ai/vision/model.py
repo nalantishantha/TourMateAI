@@ -21,8 +21,12 @@ def build_model(num_classes: int) -> Model:
         input_shape=(224, 224, 3)
     )
     
-    # Freeze the base model to prevent destroying its pre-trained weights during early training
-    base_model.trainable = False
+    # Unfreeze the top 20 layers of the base model for fine-tuning
+    # This allows the model to learn specific features of Sri Lankan landmarks
+    # instead of just relying on generic ImageNet features.
+    base_model.trainable = True
+    for layer in base_model.layers[:-20]:
+        layer.trainable = False
     
     # Add our custom classification head
     x = base_model.output

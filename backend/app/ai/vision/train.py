@@ -19,14 +19,14 @@ _CLASSES_SAVE_PATH = os.path.join(os.path.dirname(__file__), "classes.json")
 
 BATCH_SIZE = 32
 IMG_SIZE = (224, 224)
-EPOCHS = 10  # Kept small for laptop training
+EPOCHS = 30  # Good amount for ~300 images
 
 def get_data_augmentation():
     """Returns a sequential model containing augmentation layers."""
     return Sequential([
         Input(shape=(224, 224, 3)),
         RandomFlip("horizontal"),
-        RandomRotation(0.2),
+        RandomRotation(0.2),  # Increased slightly again since we have more data
         RandomZoom(0.2),
     ], name="data_augmentation")
 
@@ -85,15 +85,15 @@ def train():
     model = build_model(num_classes)
     
     model.compile(
-        optimizer=Adam(learning_rate=0.001),
+        optimizer=Adam(learning_rate=1e-4),
         loss=tf.keras.losses.SparseCategoricalCrossentropy(),
         metrics=["accuracy"]
     )
 
     # Callbacks
     callbacks = [
-        EarlyStopping(patience=3, restore_best_weights=True, monitor="val_accuracy"),
-        ModelCheckpoint(_MODEL_SAVE_PATH, save_best_only=True, monitor="val_accuracy")
+        EarlyStopping(patience=10, restore_best_weights=True, monitor="val_loss"),
+        ModelCheckpoint(_MODEL_SAVE_PATH, save_best_only=True, monitor="val_loss")
     ]
 
     print("Starting training...")
