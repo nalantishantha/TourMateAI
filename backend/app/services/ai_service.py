@@ -352,19 +352,6 @@ def _mock_recognize_image(image_file):
     }
 
 
-# --- real (teammate's CNN landmark classifier — not built yet) ----------------
-
 def _real_recognize_image(image_file):
-    """TODO: route to the real image-recognition model.
-
-    When ``backend/app/ai/vision/`` is ready, import and call it here, e.g.:
-
-        from ..ai.vision import identify
-        return identify(image_file)
-
-    It must return the shape in module contract §3, using ``matched_attraction_id
-    = None`` (and a low ``confidence``) when the landmark can't be recognized.
-    """
-    raise NotImplementedError(
-        "Real vision model not wired up yet; set USE_MOCK_AI=True in .env."
-    )
+    from ..ai.vision.classifier import identify
+    return identify(image_file)
