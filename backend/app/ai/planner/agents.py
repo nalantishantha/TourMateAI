@@ -7,7 +7,7 @@ from typing import Dict, Any
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from .state import PlannerState
-from app.models import Attraction
+from app.models import Attraction, Hotel
 
 logger = logging.getLogger(__name__)
 
@@ -295,6 +295,20 @@ def scheduler_agent(state: PlannerState) -> PlannerState:
             
             available.pop(0)
             stops_today += 1
+
+        # End of day: append the nearest hotel
+        all_hotels = Hotel.query.all()
+        if all_hotels:
+            nearest_hotel = min(all_hotels, key=lambda h: haversine_distance(current_lat, current_lng, h.latitude, h.longitude))
+            itinerary_items.append({
+                "hotel_id": nearest_hotel.id,
+                "day_number": day,
+                "order": stops_today + 1,
+                "latitude": nearest_hotel.latitude,
+                "longitude": nearest_hotel.longitude
+            })
+            current_lat = nearest_hotel.latitude
+            current_lng = nearest_hotel.longitude
             
     return {"itinerary_items": itinerary_items}
 

@@ -10,6 +10,7 @@ from .attraction import Attraction
 from .chat_session import ChatSession
 from .chat_log import ChatLog
 from .feedback import Feedback
+from .hotel import Hotel
 from .interaction import Interaction, InteractionType
 from .itinerary import Itinerary, ItineraryItem
 from .uploaded_image import UploadedImage
@@ -28,4 +29,5 @@ __all__ = [
     "ChatSession",
     "ChatLog",
     "UploadedImage",
+    "Hotel",
 ]

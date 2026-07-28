@@ -21,6 +21,7 @@ from .routes.auth import auth_bp
 from .routes.chat import chat_bp
 from .routes.images import images_bp
 from .routes.interactions import interactions_bp
+from .routes.hotels import hotels_bp
 from .routes.itineraries import itineraries_bp
 from .routes.recommendations import recommendations_bp
 from .routes.users import users_bp
@@ -48,6 +49,7 @@ def create_app(config_class=Config):
     app.register_blueprint(chat_bp, url_prefix="/api")
     app.register_blueprint(images_bp, url_prefix="/api")
     app.register_blueprint(interactions_bp, url_prefix="/api")
+    app.register_blueprint(hotels_bp)
     app.register_blueprint(itineraries_bp, url_prefix="/api")
     app.register_blueprint(recommendations_bp, url_prefix="/api")
     app.register_blueprint(users_bp, url_prefix="/api/users")

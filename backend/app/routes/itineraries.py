@@ -27,7 +27,7 @@ import json
 from flask import Blueprint, g, jsonify, request
 
 from ..extensions import db
-from ..models import Attraction, Itinerary, ItineraryItem
+from ..models import Attraction, Itinerary, ItineraryItem, Hotel
 from ..services.directions import DirectionsUnavailable, get_route
 from .attractions import _serialize_attraction
 from .auth import require_auth
@@ -49,11 +49,12 @@ def _serialize_itinerary(itinerary):
     render a meaningful card without a second round-trip per itinerary.
     ``items`` is already ordered by (day_number, order_index) — see the model.
     """
-    stops = [
-        item.attraction.name
-        for item in itinerary.items[:PREVIEW_STOPS]
-        if item.attraction
-    ]
+    stops = []
+    for item in itinerary.items[:PREVIEW_STOPS]:
+        if item.attraction:
+            stops.append(item.attraction.name)
+        elif getattr(item, "hotel", None):
+            stops.append(item.hotel.name)
     return {
         "id": itinerary.id,
         "title": itinerary.title,
@@ -71,14 +72,16 @@ def _serialize_itinerary(itinerary):
 
 
 def _serialize_item(item):
-    """Shape an ItineraryItem for JSON, attraction expanded for direct render."""
+    """Shape an ItineraryItem for JSON, attraction/hotel expanded for direct render."""
     return {
         "id": item.id,
         "attraction_id": item.attraction_id,
+        "hotel_id": getattr(item, "hotel_id", None),
         "day_number": item.day_number,
         "order_index": item.order_index,
         "notes": item.notes,
         "attraction": _serialize_attraction(item.attraction) if item.attraction else None,
+        "hotel": item.hotel.to_dict() if getattr(item, "hotel", None) else None,
     }
 
 
@@ -415,13 +418,12 @@ def day_route(itinerary_id, day_number):
     if not itinerary:
         return json_error("Itinerary not found.", 404)
 
-    valid_items = [
-        item
-        for item in itinerary.items
-        if item.attraction
-        and item.attraction.latitude is not None
-        and item.attraction.longitude is not None
-    ]
+    valid_items = []
+    for item in itinerary.items:
+        if item.attraction and item.attraction.latitude is not None and item.attraction.longitude is not None:
+            valid_items.append(item)
+        elif getattr(item, "hotel", None) and item.hotel.latitude is not None and item.hotel.longitude is not None:
+            valid_items.append(item)
     
     if not valid_items:
         return json_error("This itinerary has no valid stops to route.", 400)
@@ -430,16 +432,22 @@ def day_route(itinerary_id, day_number):
     
     stops = [item for item in valid_items if item.day_number == day_number]
 
-    coords = [(s.attraction.latitude, s.attraction.longitude) for s in stops]
-    response_stops = [
-        {
+    coords = []
+    for s in stops:
+        if s.attraction:
+            coords.append((s.attraction.latitude, s.attraction.longitude))
+        elif getattr(s, "hotel", None):
+            coords.append((s.hotel.latitude, s.hotel.longitude))
+
+    response_stops = []
+    for s in stops:
+        response_stops.append({
             "item_id": s.id,
             "attraction_id": s.attraction_id,
-            "name": s.attraction.name,
+            "hotel_id": getattr(s, "hotel_id", None),
+            "name": s.attraction.name if s.attraction else s.hotel.name,
             "day_number": s.day_number,
-        }
-        for s in stops
-    ]
+        })
 
     if day_number == 1 and itinerary.start_location:
         coords.insert(0, itinerary.start_location)
@@ -453,11 +461,18 @@ def day_route(itinerary_id, day_number):
         prev_items = [item for item in valid_items if item.day_number < day_number]
         if prev_items:
             prev_last = prev_items[-1]
-            coords.insert(0, (prev_last.attraction.latitude, prev_last.attraction.longitude))
+            if prev_last.attraction:
+                coords.insert(0, (prev_last.attraction.latitude, prev_last.attraction.longitude))
+                prev_name = prev_last.attraction.name
+            else:
+                coords.insert(0, (prev_last.hotel.latitude, prev_last.hotel.longitude))
+                prev_name = prev_last.hotel.name
+
             response_stops.insert(0, {
                 "item_id": prev_last.id,
                 "attraction_id": prev_last.attraction_id,
-                "name": prev_last.attraction.name,
+                "hotel_id": getattr(prev_last, "hotel_id", None),
+                "name": prev_name,
                 "day_number": prev_last.day_number,
             })
 
@@ -473,11 +488,18 @@ def day_route(itinerary_id, day_number):
         else:
             first_overall = valid_items[0]
             if not stops or stops[-1].id != first_overall.id:
-                coords.append((first_overall.attraction.latitude, first_overall.attraction.longitude))
+                if first_overall.attraction:
+                    coords.append((first_overall.attraction.latitude, first_overall.attraction.longitude))
+                    first_name = first_overall.attraction.name
+                else:
+                    coords.append((first_overall.hotel.latitude, first_overall.hotel.longitude))
+                    first_name = first_overall.hotel.name
+
                 response_stops.append({
                     "item_id": first_overall.id,
                     "attraction_id": first_overall.attraction_id,
-                    "name": first_overall.attraction.name,
+                    "hotel_id": getattr(first_overall, "hotel_id", None),
+                    "name": first_name,
                     "day_number": first_overall.day_number,
                 })
 

@@ -51,7 +51,13 @@ class ItineraryItem(db.Model):
     attraction_id = db.Column(
         db.Integer,
         db.ForeignKey("Attractions.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
+        index=True,
+    )
+    hotel_id = db.Column(
+        db.Integer,
+        db.ForeignKey("Hotels.id", ondelete="CASCADE"),
+        nullable=True,
         index=True,
     )
     day_number = db.Column(db.Integer)
@@ -60,6 +66,7 @@ class ItineraryItem(db.Model):
 
     itinerary = db.relationship("Itinerary", back_populates="items")
     attraction = db.relationship("Attraction", back_populates="itinerary_items")
+    hotel = db.relationship("Hotel", back_populates="itinerary_items")
 
     def __repr__(self):
         return f"<ItineraryItem {self.id} it{self.itinerary_id} a{self.attraction_id}>"
