@@ -56,6 +56,7 @@ export default function Chat() {
   const scrollRef = useRef(null)
   const textareaRef = useRef(null)
   const restoredRef = useRef(false)
+  const skipFetchRef = useRef(false)
 
   // Load Sessions on Mount
   useEffect(() => {
@@ -82,6 +83,11 @@ export default function Chat() {
     if (!activeSessionId) {
       setMessages([])
       setHistoryCount(0)
+      return
+    }
+
+    if (skipFetchRef.current) {
+      skipFetchRef.current = false
       return
     }
 
@@ -189,6 +195,7 @@ export default function Chat() {
         const newSession = await createChatSession()
         targetSessionId = newSession.id
         setSessions((prev) => [newSession, ...prev])
+        skipFetchRef.current = true
         setActiveSessionId(targetSessionId)
       }
 

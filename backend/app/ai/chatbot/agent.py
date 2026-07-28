@@ -1,11 +1,15 @@
 import os
+import threading
 import requests
+
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import create_react_agent
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.tools import tool
 
 from ...models.attraction import Attraction
+
+db_lock = threading.Lock()
 
 # --- Tools ---
 
@@ -24,7 +28,11 @@ def search_attractions(query: str = "", category: str = None, limit: int = 5) ->
     if category:
         db_query = db_query.filter(Attraction.category.ilike(f"%{category}%"))
         
-    results = db_query.limit(limit).all()
+    with db_lock:
+        results = db_query.limit(limit).all()
+        
+    if not results:
+        return [{"id": -1, "name": "Not Found", "category": "None", "description": "No results found in the database. You MUST use the search_internet tool to find this information.", "avg_rating": 0.0}]
     
     return [
         {
@@ -102,7 +110,6 @@ def search_transport_fares(query: str) -> str:
     Provide the specific route or query (e.g. 'Colombo to Galle bus fare' or 'expressway fares').
     """
     try:
-        import os
         from langchain_chroma import Chroma
         from langchain_openai import OpenAIEmbeddings
 
@@ -119,7 +126,7 @@ def search_transport_fares(query: str) -> str:
         docs = vectorstore.similarity_search(query, k=3)
         
         if not docs:
-            return "No relevant fare information found."
+            return "No relevant fare information found in the database. You MUST use the search_internet tool to find this information."
             
         result = "Found the following fare information from the NTC database:\n"
         for doc in docs:
@@ -142,7 +149,7 @@ def _get_agent_executor():
          "When asked about specific places, activities, or recommendations in Sri Lanka, ALWAYS use the `search_attractions` tool to find accurate information from our database. "
          "When asked about the weather, use the `get_weather` tool. "
          "When asked about transport costs, bus tickets, trains, or tuk-tuks, ALWAYS use the `search_transport_fares` tool to get the most up-to-date prices from the NTC database. "
-         "When asked about general knowledge, current events, or things that our database/weather tools don't know, use the `search_internet` tool to find the answer. "
+         "CRITICAL: If a database tool (`search_attractions` or `search_transport_fares`) returns no results, or if the user asks about general knowledge, current events, or things not covered by the databases, YOU MUST use the `search_internet` tool to find the answer. Never say you don't know without checking the internet first. "
          "For other costs (food, accommodation), provide reasonable estimates based on typical Sri Lankan tourism costs."
     )
     
