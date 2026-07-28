@@ -16,6 +16,13 @@ multipart). Auth: requests are expected to come from the authenticated backend c
 
 Personalized, context-aware attraction recommendations.
 
+> **Placeholder until this ships:** the Dashboard currently calls
+> `GET /api/recommendations/mock` (auth required, web-side — see
+> `backend/app/routes/recommendations.py`), which filters attractions by the
+> user's stored interests. Its items carry the same `score` + `reason` fields
+> plus full attraction data, so the frontend swap is confined to
+> `frontend/src/services/recommendations.js`.
+
 **Request**
 ```json
 {
@@ -98,6 +105,32 @@ Landmark identification from an uploaded image. **multipart/form-data**, field n
 ```
 
 If confidence is below threshold: `{ "landmark": null, "confidence": <low>, "message": "Not recognized" }`.
+
+---
+
+## 4. `POST /api/ai/plan`
+
+AI-driven itinerary planner that uses LangGraph agents to search flights, hotels, and generate a travel itinerary based on a user's prompt.
+
+**Request**
+```json
+{
+  "message": "Plan a 3 day budget trip to Colombo from New York",
+  "thread_id": "optional-thread-id-for-conversation-memory"
+}
+```
+
+**Response**
+```json
+{
+  "thread_id": "user_abc123",
+  "answer": "Here is your 3-day itinerary...",
+  "itinerary": "Day 1: ...",
+  "flight_results": "Flight options...",
+  "hotel_results": "Hotel options...",
+  "llm_calls": 4
+}
+```
 
 ---
 
