@@ -104,22 +104,26 @@ export default function TripMapCard({ items, totalDays, routes, startLocation })
     () => {
       const validItems = items.filter(
         (i) =>
-          i.attraction &&
-          typeof i.attraction.latitude === 'number' &&
-          typeof i.attraction.longitude === 'number'
+          (i.attraction &&
+            typeof i.attraction.latitude === 'number' &&
+            typeof i.attraction.longitude === 'number') ||
+          (i.hotel &&
+            typeof i.hotel.latitude === 'number' &&
+            typeof i.hotel.longitude === 'number')
       );
       
       const dayItems = validItems.filter((i) => i.day_number === day);
       if (dayItems.length === 0) return [];
       
-      const finalStops = dayItems.map(i => i.attraction);
+      const finalStops = dayItems.map(i => i.attraction || i.hotel);
       
       if (day === 1 && startLocation) {
         finalStops.unshift(startLocation);
       } else if (day > 1) {
         const prevItems = validItems.filter((i) => i.day_number < day);
         if (prevItems.length > 0) {
-          finalStops.unshift(prevItems[prevItems.length - 1].attraction);
+          const prevLast = prevItems[prevItems.length - 1]
+          finalStops.unshift(prevLast.attraction || prevLast.hotel);
         }
       }
       
@@ -127,7 +131,7 @@ export default function TripMapCard({ items, totalDays, routes, startLocation })
         if (startLocation) {
           finalStops.push(startLocation);
         } else {
-          const firstOverall = validItems[0].attraction;
+          const firstOverall = validItems[0].attraction || validItems[0].hotel;
           if (finalStops[finalStops.length - 1]?.id !== firstOverall.id) {
             finalStops.push(firstOverall);
           }
