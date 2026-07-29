@@ -314,6 +314,8 @@ def add_item(itinerary_id):
     
     if attraction_id is None and hotel_id is None:
         return json_error("Either attraction_id or hotel_id is required.", 400)
+    if attraction_id is not None and hotel_id is not None:
+        return json_error("Cannot set both attraction_id and hotel_id on the same item.", 400)
 
     if attraction_id is not None:
         if not isinstance(attraction_id, int):
