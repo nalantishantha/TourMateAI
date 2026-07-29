@@ -249,6 +249,7 @@ def scheduler_agent(state: PlannerState) -> PlannerState:
     
     MAX_PLACES_PER_DAY = 3
     MAX_JUMP_KM = 30.0 # user requested to reduce 50km to 30km
+    all_hotels = Hotel.query.all()
     
     for day in range(1, total_days + 1):
         stops_today = 0
@@ -297,19 +298,17 @@ def scheduler_agent(state: PlannerState) -> PlannerState:
             stops_today += 1
 
         # End of day: append the nearest hotel, except on the last day
-        if day < total_days:
-            all_hotels = Hotel.query.all()
-            if all_hotels:
-                nearest_hotel = min(all_hotels, key=lambda h: haversine_distance(current_lat, current_lng, h.latitude, h.longitude))
-                itinerary_items.append({
-                    "hotel_id": nearest_hotel.id,
-                    "day_number": day,
-                    "order": stops_today + 1,
-                    "latitude": nearest_hotel.latitude,
-                    "longitude": nearest_hotel.longitude
-                })
-                current_lat = nearest_hotel.latitude
-                current_lng = nearest_hotel.longitude
+        if day < total_days and all_hotels:
+            nearest_hotel = min(all_hotels, key=lambda h: haversine_distance(current_lat, current_lng, h.latitude, h.longitude))
+            itinerary_items.append({
+                "hotel_id": nearest_hotel.id,
+                "day_number": day,
+                "order": stops_today + 1,
+                "latitude": nearest_hotel.latitude,
+                "longitude": nearest_hotel.longitude
+            })
+            current_lat = nearest_hotel.latitude
+            current_lng = nearest_hotel.longitude
             
     return {"itinerary_items": itinerary_items}
 
