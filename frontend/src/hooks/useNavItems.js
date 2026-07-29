@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext'
 export default function useNavItems() {
   const { user } = useAuth()
   const items = [
+    { to: '/', label: 'Home' },
     { to: '/explore', label: 'Explore' },
     { to: '/itineraries', label: 'Itineraries' },
     { to: '/chat', label: 'Chat' },
