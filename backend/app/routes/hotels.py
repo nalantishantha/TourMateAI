@@ -4,9 +4,9 @@ from sqlalchemy import or_
 from app.models import Hotel
 from app.extensions import db
 
-hotels_bp = Blueprint("hotels", __name__, url_prefix="/api/hotels")
+hotels_bp = Blueprint("hotels", __name__)
 
-@hotels_bp.route("/", methods=["GET"])
+@hotels_bp.route("/hotels", methods=["GET"])
 def get_hotels():
     """Get hotels with optional filtering."""
     query = Hotel.query
@@ -51,7 +51,7 @@ def get_hotels():
         }
     )
 
-@hotels_bp.route("/<int:hotel_id>", methods=["GET"])
+@hotels_bp.route("/hotels/<int:hotel_id>", methods=["GET"])
 def get_hotel(hotel_id):
     """Get details for a specific hotel."""
     hotel = Hotel.query.get_or_404(hotel_id)

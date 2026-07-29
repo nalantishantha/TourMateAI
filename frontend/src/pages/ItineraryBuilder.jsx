@@ -46,6 +46,7 @@ function DragHandleIcon() {
 /** One attraction row inside a day — draggable, removable, links to detail. */
 function DayItemRow({ item, dragging, onDragStart, onDragEnter, onDragEnd, onRemove }) {
   const attraction = item.attraction
+  const hotel = item.hotel
   return (
     <div
       className={`it-item ${dragging ? 'it-item-dragging' : ''}`}
@@ -67,6 +68,8 @@ function DayItemRow({ item, dragging, onDragStart, onDragEnter, onDragEnd, onRem
       <div className="it-item-thumb">
         {attraction ? (
           <AttractionImage attraction={attraction} className="it-item-img" />
+        ) : hotel ? (
+          <img src={hotel.image_url || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=800'} alt={hotel.name} className="it-item-img" style={{ objectFit: 'cover' }} />
         ) : (
           <div className="it-item-img it-item-img-missing" />
         )}
@@ -76,19 +79,32 @@ function DayItemRow({ item, dragging, onDragStart, onDragEnter, onDragEnd, onRem
           <Link to={`/explore/${attraction.id}`} className="it-item-name">
             {attraction.name}
           </Link>
+        ) : hotel ? (
+          <span className="it-item-name">
+            {hotel.name} <span style={{fontSize: '0.85em', color: '#666', fontWeight: 'normal', marginLeft: '4px'}}>· Hotel</span>
+          </span>
         ) : (
-          <span className="it-item-name">Removed attraction</span>
+          <span className="it-item-name">Removed item</span>
         )}
         <span className="it-item-meta">
-          {attraction?.category}
-          {attraction?.avg_rating ? ` · ★ ${attraction.avg_rating.toFixed(1)}` : ''}
+          {attraction ? (
+            <>
+              {attraction.category}
+              {attraction.avg_rating ? ` · ★ ${attraction.avg_rating.toFixed(1)}` : ''}
+            </>
+          ) : hotel ? (
+            <>
+              <span style={{ textTransform: 'capitalize' }}>{hotel.budget_tier}</span>
+              {hotel.avg_rating ? ` · ★ ${hotel.avg_rating.toFixed(1)}` : ''}
+            </>
+          ) : null}
         </span>
       </div>
       <button
         type="button"
         className="it-item-remove"
         onClick={() => onRemove(item)}
-        aria-label={`Remove ${attraction?.name || 'item'} from this day`}
+        aria-label={`Remove ${attraction?.name || hotel?.name || 'item'} from this day`}
         title="Remove from day"
       >
         ✕
@@ -762,6 +778,7 @@ export default function ItineraryBuilder() {
       for (const genItem of generatedItems) {
         const item = await addItineraryItem(itinerary.id, {
           attractionId: genItem.attraction_id,
+          hotelId: genItem.hotel_id,
           dayNumber: genItem.day_number,
         })
         updatedItems.push(item)

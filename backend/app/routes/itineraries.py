@@ -310,11 +310,24 @@ def add_item(itinerary_id):
     body = request.get_json(silent=True) or {}
 
     attraction_id = body.get("attraction_id")
-    if not isinstance(attraction_id, int):
-        return json_error("attraction_id is required and must be an integer.", 400)
-    attraction = db.session.get(Attraction, attraction_id)
-    if not attraction:
-        return json_error("Attraction not found.", 404)
+    hotel_id = body.get("hotel_id")
+    
+    if attraction_id is None and hotel_id is None:
+        return json_error("Either attraction_id or hotel_id is required.", 400)
+
+    if attraction_id is not None:
+        if not isinstance(attraction_id, int):
+            return json_error("attraction_id must be an integer.", 400)
+        attraction = db.session.get(Attraction, attraction_id)
+        if not attraction:
+            return json_error("Attraction not found.", 404)
+            
+    if hotel_id is not None:
+        if not isinstance(hotel_id, int):
+            return json_error("hotel_id must be an integer.", 400)
+        hotel = db.session.get(Hotel, hotel_id)
+        if not hotel:
+            return json_error("Hotel not found.", 404)
 
     day_number = body.get("day_number")
     if not isinstance(day_number, int) or day_number < 1:
@@ -330,6 +343,7 @@ def add_item(itinerary_id):
     item = ItineraryItem(
         itinerary_id=itinerary.id,
         attraction_id=attraction_id,
+        hotel_id=hotel_id,
         day_number=day_number,
         order_index=tail + 1,
     )

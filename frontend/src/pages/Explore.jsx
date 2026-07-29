@@ -8,12 +8,14 @@
 import { useEffect, useState } from 'react'
 import PageContainer from '../components/layout/PageContainer'
 import AttractionCard, { AttractionCardSkeleton } from '../components/explore/AttractionCard'
+import HotelCard, { HotelCardSkeleton } from '../components/explore/HotelCard'
 import useLikes from '../hooks/useLikes'
 import { fetchAttractions } from '../services/attractions'
+import { fetchHotels } from '../services/hotels'
 import { categoryScene, scenes } from '../assets/photos'
 import '../styles/explore.css'
 
-const PER_PAGE = 24
+const PER_PAGE = 8
 const SEARCH_DEBOUNCE_MS = 300
 const SKELETON_COUNT = 8
 
@@ -38,6 +40,14 @@ export default function Explore() {
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState(null)
+  
+  const [hotels, setHotels] = useState([])
+  const [hotelPagination, setHotelPagination] = useState(null)
+  const [hotelPage, setHotelPage] = useState(1)
+  const [loadingHotels, setLoadingHotels] = useState(true)
+  const [loadingMoreHotels, setLoadingMoreHotels] = useState(false)
+  const [hotelError, setHotelError] = useState(null)
+
   const [reloadKey, setReloadKey] = useState(0) // bump to refetch after an error
 
   const { liked, toggleLike } = useLikes()
@@ -47,6 +57,7 @@ export default function Explore() {
     const timer = setTimeout(() => {
       setSearch(searchInput.trim())
       setPage(1)
+      setHotelPage(1)
     }, SEARCH_DEBOUNCE_MS)
     return () => clearTimeout(timer)
   }, [searchInput])
@@ -88,6 +99,39 @@ export default function Explore() {
     }
   }, [search, category, page, reloadKey])
 
+  useEffect(() => {
+    let cancelled = false
+    if (hotelPage === 1) setLoadingHotels(true)
+    else setLoadingMoreHotels(true)
+    setHotelError(null)
+
+    fetchHotels({ search, page: hotelPage, perPage: PER_PAGE })
+      .then((data) => {
+        if (cancelled) return
+        setHotels((prev) =>
+          hotelPage === 1 ? data.hotels : [...prev, ...data.hotels]
+        )
+        setHotelPagination({
+          page: data.current_page,
+          total_pages: data.pages,
+          total: data.total
+        })
+      })
+      .catch(() => {
+        if (!cancelled) setHotelError('Could not load hotels.')
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoadingHotels(false)
+          setLoadingMoreHotels(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [search, hotelPage, reloadKey])
+
   const pickCategory = (value) => {
     setCategory(value)
     setPage(1)
@@ -98,11 +142,15 @@ export default function Explore() {
     setSearch('')
     setCategory('')
     setPage(1)
+    setHotelPage(1)
   }
 
   const hasFilters = Boolean(search || category)
   const hasMore = pagination && pagination.page < pagination.total_pages
   const showSkeletons = loading && page === 1
+
+  const hasMoreHotels = hotelPagination && hotelPagination.page < hotelPagination.total_pages
+  const showHotelSkeletons = loadingHotels && hotelPage === 1
 
   return (
     <PageContainer>
@@ -179,7 +227,8 @@ export default function Explore() {
         </div>
       </section>
 
-      <div className="explore-toolbar" aria-live="polite">
+      <div className="explore-toolbar" aria-live="polite" style={{ marginTop: '2rem', marginBottom: '1rem' }}>
+        <h2>Visiting Places</h2>
         {!showSkeletons && !error && pagination && (
           <p className="explore-count">
             Showing <strong>{attractions.length}</strong> of{' '}
@@ -268,6 +317,90 @@ export default function Explore() {
           )}
         </>
       )}
+
+      {/* Hotels Section */}
+      <div className="explore-toolbar" aria-live="polite" style={{ marginTop: '4rem', marginBottom: '1rem' }}>
+        <h2>Places to Stay</h2>
+        {!showHotelSkeletons && !hotelError && hotelPagination && (
+          <p className="explore-count">
+            Showing <strong>{hotels.length}</strong> of{' '}
+            <strong>{hotelPagination.total}</strong> hotels
+            {search && (
+              <>
+                {' '}matching “<strong>{search}</strong>”
+              </>
+            )}
+          </p>
+        )}
+      </div>
+
+      {hotelError ? (
+        <div className="explore-empty card">
+          <span className="explore-empty-icon" aria-hidden="true">
+            ⚠️
+          </span>
+          <h3>Something went wrong</h3>
+          <p>{hotelError}</p>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => {
+              setHotelPage(1)
+              setReloadKey((k) => k + 1)
+            }}
+          >
+            Try again
+          </button>
+        </div>
+      ) : showHotelSkeletons ? (
+        <div className="attraction-grid" aria-busy="true" aria-label="Loading hotels">
+          {Array.from({ length: SKELETON_COUNT }, (_, i) => (
+            <HotelCardSkeleton key={`hotel-skeleton-${i}`} />
+          ))}
+        </div>
+      ) : hotels.length === 0 ? (
+        <div className="explore-empty card">
+          <span className="explore-empty-icon" aria-hidden="true">
+            🛏️
+          </span>
+          <h3>No hotels found</h3>
+          <p>
+            We couldn't find any accommodations
+            {search && <> for “{search}”</>}.
+          </p>
+          {hasFilters && (
+            <button type="button" className="btn btn-primary" onClick={clearFilters}>
+              Clear filters
+            </button>
+          )}
+        </div>
+      ) : (
+        <>
+          <div className="attraction-grid">
+            {hotels.map((hotel, i) => (
+              <HotelCard
+                key={hotel.id}
+                hotel={hotel}
+                index={i}
+              />
+            ))}
+          </div>
+
+          {hasMoreHotels && (
+            <div className="explore-more">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setHotelPage((p) => p + 1)}
+                disabled={loadingMoreHotels}
+              >
+                {loadingMoreHotels ? 'Loading…' : 'Load more hotels'}
+              </button>
+            </div>
+          )}
+        </>
+      )}
+
     </PageContainer>
   )
 }

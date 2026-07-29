@@ -49,7 +49,7 @@ def create_app(config_class=Config):
     app.register_blueprint(chat_bp, url_prefix="/api")
     app.register_blueprint(images_bp, url_prefix="/api")
     app.register_blueprint(interactions_bp, url_prefix="/api")
-    app.register_blueprint(hotels_bp)
+    app.register_blueprint(hotels_bp, url_prefix="/api")
     app.register_blueprint(itineraries_bp, url_prefix="/api")
     app.register_blueprint(recommendations_bp, url_prefix="/api")
     app.register_blueprint(users_bp, url_prefix="/api/users")
