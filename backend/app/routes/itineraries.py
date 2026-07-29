@@ -53,7 +53,7 @@ def _serialize_itinerary(itinerary):
     for item in itinerary.items[:PREVIEW_STOPS]:
         if item.attraction:
             stops.append(item.attraction.name)
-        elif getattr(item, "hotel", None):
+        elif item.hotel:
             stops.append(item.hotel.name)
     return {
         "id": itinerary.id,
@@ -76,12 +76,12 @@ def _serialize_item(item):
     return {
         "id": item.id,
         "attraction_id": item.attraction_id,
-        "hotel_id": getattr(item, "hotel_id", None),
+        "hotel_id": item.hotel_id,
         "day_number": item.day_number,
         "order_index": item.order_index,
         "notes": item.notes,
         "attraction": _serialize_attraction(item.attraction) if item.attraction else None,
-        "hotel": item.hotel.to_dict() if getattr(item, "hotel", None) else None,
+        "hotel": item.hotel.to_dict() if item.hotel else None,
     }
 
 
@@ -438,7 +438,7 @@ def day_route(itinerary_id, day_number):
     for item in itinerary.items:
         if item.attraction and item.attraction.latitude is not None and item.attraction.longitude is not None:
             valid_items.append(item)
-        elif getattr(item, "hotel", None) and item.hotel.latitude is not None and item.hotel.longitude is not None:
+        elif item.hotel and item.hotel.latitude is not None and item.hotel.longitude is not None:
             valid_items.append(item)
     
     if not valid_items:
@@ -452,7 +452,7 @@ def day_route(itinerary_id, day_number):
     for s in stops:
         if s.attraction:
             coords.append((s.attraction.latitude, s.attraction.longitude))
-        elif getattr(s, "hotel", None):
+        elif s.hotel:
             coords.append((s.hotel.latitude, s.hotel.longitude))
 
     response_stops = []
@@ -460,7 +460,7 @@ def day_route(itinerary_id, day_number):
         response_stops.append({
             "item_id": s.id,
             "attraction_id": s.attraction_id,
-            "hotel_id": getattr(s, "hotel_id", None),
+            "hotel_id": s.hotel_id,
             "name": s.attraction.name if s.attraction else s.hotel.name,
             "day_number": s.day_number,
         })
@@ -487,7 +487,7 @@ def day_route(itinerary_id, day_number):
             response_stops.insert(0, {
                 "item_id": prev_last.id,
                 "attraction_id": prev_last.attraction_id,
-                "hotel_id": getattr(prev_last, "hotel_id", None),
+                "hotel_id": prev_last.hotel_id,
                 "name": prev_name,
                 "day_number": prev_last.day_number,
             })
@@ -514,7 +514,7 @@ def day_route(itinerary_id, day_number):
                 response_stops.append({
                     "item_id": first_overall.id,
                     "attraction_id": first_overall.attraction_id,
-                    "hotel_id": getattr(first_overall, "hotel_id", None),
+                    "hotel_id": first_overall.hotel_id,
                     "name": first_name,
                     "day_number": first_overall.day_number,
                 })
