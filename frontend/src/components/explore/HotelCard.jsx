@@ -13,14 +13,11 @@ function HotelImage({ hotel, className }) {
 }
 
 export default function HotelCard({ hotel, index = 0 }) {
-  // Let's use a non-navigating div for now if there is no hotel detail page,
-  // or a Link if there will be one. Let's assume there's no hotel detail page yet,
-  // so just a div card is fine.
-  
   return (
-    <div
+    <Link
+      to={`/explore/hotel/${hotel.id}`}
       className="attraction-card"
-      style={{ animationDelay: `${Math.min(index, 11) * 45}ms` }}
+      style={{ animationDelay: `${Math.min(index, 11) * 45}ms`, display: 'block' }}
     >
       <div className="attraction-card-media">
         <HotelImage hotel={hotel} className="attraction-card-img" />
@@ -44,7 +41,7 @@ export default function HotelCard({ hotel, index = 0 }) {
         </p>
         <p className="attraction-card-desc">{hotel.description}</p>
       </div>
-    </div>
+    </Link>
   )
 }
 
