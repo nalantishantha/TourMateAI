@@ -22,6 +22,11 @@ export async function fetchAttraction(id) {
   return data.attraction // includes rating_count + reviews[]
 }
 
+export async function fetchNearbyAttractions(id) {
+  const { data } = await api.get(`/attractions/${id}/nearby`)
+  return data.attractions
+}
+
 export async function submitFeedback(id, { rating, comment }) {
   const { data } = await api.post(`/attractions/${id}/feedback`, {
     rating,

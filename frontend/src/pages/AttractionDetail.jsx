@@ -10,8 +10,11 @@ import AttractionImage from '../components/explore/AttractionImage'
 import AttractionMap from '../components/explore/AttractionMap'
 import StarRating from '../components/explore/StarRating'
 import WeatherCard from '../components/weather/WeatherCard'
+import AttractionCard from '../components/explore/AttractionCard'
+import useLikes from '../hooks/useLikes'
 import {
   fetchAttraction,
+  fetchNearbyAttractions,
   logInteraction,
   submitFeedback,
 } from '../services/attractions'
@@ -157,8 +160,11 @@ function DetailSkeleton() {
 export default function AttractionDetail() {
   const { id } = useParams()
   const [attraction, setAttraction] = useState(null)
+  const [nearby, setNearby] = useState([])
   const [error, setError] = useState(null)
   const viewLogged = useRef(null)
+
+  const { liked, toggleLike } = useLikes()
 
   const load = () => {
     fetchAttraction(id)
@@ -170,10 +176,16 @@ export default function AttractionDetail() {
             : 'Could not load this attraction. Please try again.'
         )
       })
+
+    fetchNearbyAttractions(id)
+      .then(setNearby)
+      .catch(() => setNearby([]))
   }
 
   useEffect(() => {
+    window.scrollTo(0, 0)
     setAttraction(null)
+    setNearby([])
     setError(null)
     load()
     // Log the view once per attraction (guards StrictMode's double effect).
@@ -311,6 +323,23 @@ export default function AttractionDetail() {
               </section>
             </aside>
           </div>
+
+          {nearby.length > 0 && (
+            <section className="detail-nearby" style={{ marginTop: '3rem' }}>
+              <h2 className="detail-section-title" style={{ marginBottom: '1.5rem' }}>Nearby & Recommended</h2>
+              <div className="attraction-grid">
+                {nearby.map((item, i) => (
+                  <AttractionCard
+                    key={item.id}
+                    attraction={item}
+                    index={i}
+                    liked={liked.has(item.id)}
+                    onToggleLike={toggleLike}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
         </>
       )}
     </PageContainer>

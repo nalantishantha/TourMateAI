@@ -11,6 +11,7 @@ Routes (registered under ``/api``):
   - ``POST /api/attractions/<id>/feedback``        auth: submit/update a rating
 """
 
+import math
 from flask import Blueprint, g, jsonify, request
 from sqlalchemy import func
 
@@ -156,6 +157,80 @@ def get_attraction(attraction_id):
     data["rating_count"] = count
     data["reviews"] = [_serialize_feedback(f) for f in recent]
     return jsonify({"attraction": data})
+
+
+def _haversine(lat1, lon1, lat2, lon2):
+    """Calculate the great circle distance between two points on the earth in km."""
+    if lat1 is None or lon1 is None or lat2 is None or lon2 is None:
+        return float('inf')
+    R = 6371.0
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = math.sin(dlat / 2) ** 2 + math.cos(math.radians(lat1)) * \
+        math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return R * c
+
+
+@attractions_bp.get("/attractions/<int:attraction_id>/nearby")
+@require_auth
+def get_nearby_attractions(attraction_id):
+    """Return nearby attractions (within 40km), blended with recommendation scores."""
+    attraction = db.session.get(Attraction, attraction_id)
+    if attraction is None:
+        return json_error("Attraction not found.", 404)
+
+    # 1. Fetch all other attractions
+    all_others = Attraction.query.filter(Attraction.id != attraction_id).all()
+    
+    # 2. Filter by distance <= 40km
+    nearby = []
+    for other in all_others:
+        dist = _haversine(attraction.latitude, attraction.longitude, other.latitude, other.longitude)
+        if dist <= 40.0:
+            nearby.append((other, dist))
+            
+    if not nearby:
+        return jsonify({"attractions": []})
+
+    # 3. Get personalized recommendations to boost scores
+    # get_recommendations returns a list of dicts with 'id' and 'score'
+    from ..services.ai_service import get_recommendations
+    user_id = g.current_user.id if hasattr(g, 'current_user') and g.current_user else None
+    recs = get_recommendations(user_id, limit=50) if user_id else []
+    
+    # Create a lookup for recommendation scores (default 0)
+    rec_scores = {r["id"]: r.get("score", 0.0) for r in recs}
+    
+    # 4. Score and sort the nearby locations
+    # Lower distance is better. Higher rec score is better.
+    # Score formula: rec_score - (distance / 40.0) -> maximizes at (high rec, low dist)
+    results = []
+    for other, dist in nearby:
+        rec_score = rec_scores.get(other.id, 0.0)
+        # Normalize distance to 0-1 (where 0 is 0km, 1 is 40km)
+        dist_norm = dist / 40.0
+        # Final blended score
+        blended_score = rec_score - dist_norm
+        results.append({
+            "attraction": other,
+            "distance": round(dist, 1),
+            "blended_score": blended_score
+        })
+        
+    # Sort descending by blended score
+    results.sort(key=lambda x: x["blended_score"], reverse=True)
+    
+    # 5. Return top 4
+    top_results = results[:4]
+    
+    out = []
+    for res in top_results:
+        data = _serialize_attraction(res["attraction"])
+        data["distance_km"] = res["distance"]
+        out.append(data)
+
+    return jsonify({"attractions": out})
 
 
 @attractions_bp.post("/attractions/<int:attraction_id>/feedback")
