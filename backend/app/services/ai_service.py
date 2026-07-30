@@ -163,19 +163,8 @@ def _mock_get_recommendations(user_id, limit):
 # --- real (teammate's recommendation engine — not built yet) ------------------
 
 def _real_get_recommendations(user_id, limit):
-    """TODO: route to the real content-based recommender.
-
-    When ``backend/app/ai/recommender/`` is ready, import and call it here, e.g.:
-
-        from ..ai.recommender import recommend
-        return recommend(user_id=user_id, limit=limit)
-
-    It must return the shape documented in module contract §1 (a list of
-    serialized-attraction dicts, each with ``score`` and ``reason``).
-    """
-    raise NotImplementedError(
-        "Real recommender not wired up yet; set USE_MOCK_AI=True in .env."
-    )
+    from ..ai.recommender import recommend
+    return recommend(user_id=user_id, limit=limit)
 
 
 # =============================================================================

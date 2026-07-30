@@ -9,6 +9,6 @@
 import api from './api'
 
 export async function fetchRecommendations({ limit = 8 } = {}) {
-  const { data } = await api.get('/recommendations/mock', { params: { limit } })
+  const { data } = await api.get('/recommendations', { params: { limit } })
   return data.recommendations // [{ ...attraction, score, reason }]
 }
