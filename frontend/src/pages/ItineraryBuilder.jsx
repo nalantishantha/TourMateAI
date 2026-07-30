@@ -46,6 +46,7 @@ function DragHandleIcon() {
 /** One attraction row inside a day — draggable, removable, links to detail. */
 function DayItemRow({ item, dragging, onDragStart, onDragEnter, onDragEnd, onRemove }) {
   const attraction = item.attraction
+  const hotel = item.hotel
   return (
     <div
       className={`it-item ${dragging ? 'it-item-dragging' : ''}`}
@@ -67,6 +68,8 @@ function DayItemRow({ item, dragging, onDragStart, onDragEnter, onDragEnd, onRem
       <div className="it-item-thumb">
         {attraction ? (
           <AttractionImage attraction={attraction} className="it-item-img" />
+        ) : hotel ? (
+          <img src={hotel.image_url || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=800'} alt={hotel.name} className="it-item-img" style={{ objectFit: 'cover' }} />
         ) : (
           <div className="it-item-img it-item-img-missing" />
         )}
@@ -76,19 +79,32 @@ function DayItemRow({ item, dragging, onDragStart, onDragEnter, onDragEnd, onRem
           <Link to={`/explore/${attraction.id}`} className="it-item-name">
             {attraction.name}
           </Link>
+        ) : hotel ? (
+          <span className="it-item-name">
+            {hotel.name} <span style={{fontSize: '0.85em', color: '#666', fontWeight: 'normal', marginLeft: '4px'}}>· Hotel</span>
+          </span>
         ) : (
-          <span className="it-item-name">Removed attraction</span>
+          <span className="it-item-name">Removed item</span>
         )}
         <span className="it-item-meta">
-          {attraction?.category}
-          {attraction?.avg_rating ? ` · ★ ${attraction.avg_rating.toFixed(1)}` : ''}
+          {attraction ? (
+            <>
+              {attraction.category}
+              {attraction.avg_rating ? ` · ★ ${attraction.avg_rating.toFixed(1)}` : ''}
+            </>
+          ) : hotel ? (
+            <>
+              <span style={{ textTransform: 'capitalize' }}>{hotel.budget_tier}</span>
+              {hotel.avg_rating ? ` · ★ ${hotel.avg_rating.toFixed(1)}` : ''}
+            </>
+          ) : null}
         </span>
       </div>
       <button
         type="button"
         className="it-item-remove"
         onClick={() => onRemove(item)}
-        aria-label={`Remove ${attraction?.name || 'item'} from this day`}
+        aria-label={`Remove ${attraction?.name || hotel?.name || 'item'} from this day`}
         title="Remove from day"
       >
         ✕
@@ -762,6 +778,7 @@ export default function ItineraryBuilder() {
       for (const genItem of generatedItems) {
         const item = await addItineraryItem(itinerary.id, {
           attractionId: genItem.attraction_id,
+          hotelId: genItem.hotel_id,
           dayNumber: genItem.day_number,
         })
         updatedItems.push(item)
@@ -866,8 +883,7 @@ export default function ItineraryBuilder() {
        const response = await api.post('/ai/generate-pdf-summary', { itinerary_id: itinerary.id })
        
        if (pdfContainerRef.current) {
-          const ReactMarkdown = (await import('react-markdown')).default
-          const { createRoot } = await import('react-dom/client')
+          const { marked } = await import('marked')
           
           const tempDiv = document.createElement('div')
           tempDiv.className = 'modern-pdf-container'
@@ -875,34 +891,30 @@ export default function ItineraryBuilder() {
           const startDate = itinerary.start_date ? new Date(itinerary.start_date).toLocaleDateString() : 'TBD'
           const endDate = itinerary.end_date ? new Date(itinerary.end_date).toLocaleDateString() : 'TBD'
           
+          const parsedContent = await marked.parse(response.data.markdown)
+          
           tempDiv.innerHTML = `
             <div class="pdf-header">
               <h1>${itinerary.title}</h1>
               <p>${startDate} - ${endDate}</p>
             </div>
-            <div class="pdf-content"></div>
+            <div class="pdf-content">${parsedContent}</div>
           `
           
           pdfContainerRef.current.appendChild(tempDiv)
-          const contentDiv = tempDiv.querySelector('.pdf-content')
-          const root = createRoot(contentDiv)
-          root.render(<ReactMarkdown>{response.data.markdown}</ReactMarkdown>)
           
-          setTimeout(async () => {
-             const html2pdf = (await import('html2pdf.js')).default
-             const opt = {
-               margin: [0, 0, 10, 0], // Top margin 0 for full-width banner
-               filename: `${itinerary.title.replace(/\s+/g, '_')}_Plan.pdf`,
-               image: { type: 'jpeg', quality: 0.98 },
-               html2canvas: { scale: 2 },
-               jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-             }
-             await html2pdf().from(tempDiv).set(opt).save()
-             
-             root.unmount()
-             pdfContainerRef.current.innerHTML = ''
-             setGeneratingPdf(false)
-          }, 500)
+          const html2pdf = (await import('html2pdf.js')).default
+          const opt = {
+            margin: [0, 0, 10, 0], // Top margin 0 for full-width banner
+            filename: `${itinerary.title.replace(/\s+/g, '_')}_Plan.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          }
+          await html2pdf().from(tempDiv).set(opt).save()
+          
+          pdfContainerRef.current.innerHTML = ''
+          setGeneratingPdf(false)
        }
     } catch (err) {
        console.error(err)

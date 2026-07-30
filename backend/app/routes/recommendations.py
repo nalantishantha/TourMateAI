@@ -26,7 +26,7 @@ DEFAULT_LIMIT = 8
 MAX_LIMIT = 24
 
 
-@recommendations_bp.get("/recommendations/mock")
+@recommendations_bp.get("/recommendations")
 @require_auth
 def mock_recommendations():
     """Personalized attraction picks for the current user.
