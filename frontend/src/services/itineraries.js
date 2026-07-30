@@ -40,11 +40,12 @@ export async function deleteItinerary(id) {
   return data.deleted
 }
 
-export async function addItineraryItem(id, { attractionId, dayNumber }) {
-  const { data } = await api.post(`/itineraries/${id}/items`, {
-    attraction_id: attractionId,
-    day_number: dayNumber,
-  })
+export async function addItineraryItem(id, { attractionId, hotelId, dayNumber }) {
+  const payload = { day_number: dayNumber }
+  if (attractionId) payload.attraction_id = attractionId
+  if (hotelId) payload.hotel_id = hotelId
+
+  const { data } = await api.post(`/itineraries/${id}/items`, payload)
   return data.item
 }
 
