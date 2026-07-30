@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import AppShell from './components/layout/AppShell'
 import Admin from './pages/Admin'
 import AttractionDetail from './pages/AttractionDetail'
+import HotelDetail from './pages/HotelDetail'
 import Chat from './pages/Chat'
 import Dashboard from './pages/Dashboard'
 import Explore from './pages/Explore'
@@ -35,6 +36,7 @@ export default function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/explore" element={<Explore />} />
         <Route path="/explore/:id" element={<AttractionDetail />} />
+        <Route path="/explore/hotel/:id" element={<HotelDetail />} />
         <Route path="/itineraries" element={<Itineraries />} />
         <Route path="/itineraries/:id" element={<ItineraryBuilder />} />
         <Route path="/chat" element={<Chat />} />
