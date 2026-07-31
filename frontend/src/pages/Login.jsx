@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import AuthLayout from '../components/layout/AuthLayout'
 
@@ -9,6 +10,7 @@ export default function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const { t } = useTranslation()
   const from = location.state?.from?.pathname || '/'
 
   const [email, setEmail] = useState('')
@@ -33,8 +35,8 @@ export default function Login() {
   return (
     <AuthLayout>
       <div className="auth-card">
-        <h2 className="auth-title">Welcome back</h2>
-        <p className="auth-lead">Log in to pick up your journey where you left off.</p>
+        <h2 className="auth-title">{t('auth.loginTitle')}</h2>
+        <p className="auth-lead">{t('auth.loginLead')}</p>
 
         {error && (
           <div className="alert alert-error" role="alert">
@@ -44,12 +46,12 @@ export default function Login() {
 
         <form onSubmit={handleSubmit} noValidate>
           <div className="field">
-            <label className="label" htmlFor="email">Email</label>
+            <label className="label" htmlFor="email">{t('auth.emailLabel')}</label>
             <input
               id="email"
               className="input"
               type="email"
-              placeholder="you@example.com"
+              placeholder={t('auth.emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -58,12 +60,12 @@ export default function Login() {
           </div>
 
           <div className="field">
-            <label className="label" htmlFor="password">Password</label>
+            <label className="label" htmlFor="password">{t('auth.passwordLabel')}</label>
             <input
               id="password"
               className="input"
               type="password"
-              placeholder="Your password"
+              placeholder={t('auth.passwordPlaceholder')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -72,12 +74,12 @@ export default function Login() {
           </div>
 
           <button type="submit" className="btn btn-primary btn-lg btn-block" disabled={submitting}>
-            {submitting ? 'Logging in…' : 'Log in'}
+            {submitting ? t('auth.loggingInBtn') : t('auth.loginBtn')}
           </button>
         </form>
 
         <p className="auth-switch">
-          New to TourMateAI? <Link to="/signup">Create an account</Link>
+          {t('auth.newToTourMate')} <Link to="/signup">{t('auth.createAccountLink')}</Link>
         </p>
       </div>
     </AuthLayout>
