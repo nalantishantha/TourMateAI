@@ -2,12 +2,14 @@
 
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import AuthLayout from '../components/layout/AuthLayout'
 
 export default function SignUp() {
   const { signup } = useAuth()
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -32,9 +34,9 @@ export default function SignUp() {
   return (
     <AuthLayout>
       <div className="auth-card">
-        <h2 className="auth-title">Start exploring</h2>
+        <h2 className="auth-title">{t('auth.signupTitle')}</h2>
         <p className="auth-lead">
-          Create a free account and let TourMateAI plan your Sri Lankan adventure.
+          {t('auth.signupLead')}
         </p>
 
         {error && (
@@ -45,12 +47,12 @@ export default function SignUp() {
 
         <form onSubmit={handleSubmit} noValidate>
           <div className="field">
-            <label className="label" htmlFor="email">Email</label>
+            <label className="label" htmlFor="email">{t('auth.emailLabel')}</label>
             <input
               id="email"
               className="input"
               type="email"
-              placeholder="you@example.com"
+              placeholder={t('auth.emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -59,28 +61,28 @@ export default function SignUp() {
           </div>
 
           <div className="field">
-            <label className="label" htmlFor="password">Password</label>
+            <label className="label" htmlFor="password">{t('auth.passwordLabel')}</label>
             <input
               id="password"
               className="input"
               type="password"
-              placeholder="At least 6 characters"
+              placeholder={t('auth.signupPasswordPlaceholder')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="new-password"
               minLength={6}
             />
-            <p className="hint">Use at least 6 characters.</p>
+            <p className="hint">{t('auth.passwordHint')}</p>
           </div>
 
           <button type="submit" className="btn btn-primary btn-lg btn-block" disabled={submitting}>
-            {submitting ? 'Creating account…' : 'Create account'}
+            {submitting ? t('auth.creatingAccountBtn') : t('auth.createAccountBtn')}
           </button>
         </form>
 
         <p className="auth-switch">
-          Already have an account? <Link to="/login">Log in</Link>
+          {t('auth.alreadyHaveAccount')} <Link to="/login">{t('auth.loginLink')}</Link>
         </p>
       </div>
     </AuthLayout>

@@ -4,6 +4,7 @@
 // interaction.
 
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import AttractionImage from './AttractionImage'
 
 function HeartIcon({ filled }) {
@@ -21,6 +22,8 @@ function HeartIcon({ filled }) {
 }
 
 export default function AttractionCard({ attraction, liked, onToggleLike, index = 0 }) {
+  const { t } = useTranslation()
+
   const handleLike = (event) => {
     // The card itself is a link — keep the heart from navigating.
     event.preventDefault()
@@ -42,7 +45,7 @@ export default function AttractionCard({ attraction, liked, onToggleLike, index 
           className={`like-btn${liked ? ' liked' : ''}`}
           onClick={handleLike}
           aria-pressed={liked}
-          aria-label={liked ? `Unlike ${attraction.name}` : `Like ${attraction.name}`}
+          aria-label={liked ? `${t('explore.unlikeLabel')} ${attraction.name}` : `${t('explore.likeLabel')} ${attraction.name}`}
         >
           <HeartIcon filled={liked} />
         </button>
@@ -55,7 +58,7 @@ export default function AttractionCard({ attraction, liked, onToggleLike, index 
             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8-6.1-3.5-6.1 3.5 1.4-6.8L2.2 9.1l6.9-.8L12 2z" />
             </svg>
-            {attraction.avg_rating ? attraction.avg_rating.toFixed(1) : 'New'}
+            {attraction.avg_rating ? attraction.avg_rating.toFixed(1) : t('explore.newRating')}
           </span>
         </div>
         <p className="attraction-card-desc">{attraction.description}</p>
