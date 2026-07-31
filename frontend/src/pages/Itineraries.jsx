@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import PageContainer from '../components/layout/PageContainer'
 import { attractionPhoto } from '../assets/photos'
 import {
@@ -22,6 +23,7 @@ function todayIso(offsetDays = 0) {
 
 /** Modal form: trip title + dates, with a live day-count readout. */
 function NewTripModal({ onClose }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [origin, setOrigin] = useState('')
   const [destination, setDestination] = useState('')
@@ -64,7 +66,7 @@ function NewTripModal({ onClose }) {
       // Navigate to the AI Trip Viewer 
       navigate(`/itineraries/${itinerary.id}`, { state: { initialPreferences: fullPreferences } })
     } catch (err) {
-      setError(err?.response?.data?.error || 'Could not create the trip. Please try again.')
+      setError(err?.response?.data?.error || t('itineraries.createError'))
       setSubmitting(false)
     }
   }
@@ -80,8 +82,8 @@ function NewTripModal({ onClose }) {
         style={{ maxWidth: '600px' }}
       >
         <div className="it-modal-head">
-          <h2 id="new-trip-title">AI Trip Planner</h2>
-          <button type="button" className="it-modal-close" onClick={onClose} aria-label="Close">
+          <h2 id="new-trip-title">{t('itineraries.modalTitle')}</h2>
+          <button type="button" className="it-modal-close" onClick={onClose} aria-label={t('itineraries.closeBtn')}>
             ✕
           </button>
         </div>
@@ -89,24 +91,24 @@ function NewTripModal({ onClose }) {
         <form onSubmit={handleSubmit}>
           <div className="it-date-row">
             <div className="field">
-              <label className="label" htmlFor="trip-origin">Start from</label>
+              <label className="label" htmlFor="trip-origin">{t('itineraries.startFrom')}</label>
               <input
                 id="trip-origin"
                 className="input"
                 value={origin}
                 onChange={(e) => setOrigin(e.target.value)}
-                placeholder="e.g. Colombo (Optional)"
+                placeholder={t('itineraries.startFromPlaceholder')}
                 maxLength={200}
               />
             </div>
             <div className="field">
-              <label className="label" htmlFor="trip-dest">To (Destination)</label>
+              <label className="label" htmlFor="trip-dest">{t('itineraries.to')}</label>
               <input
                 id="trip-dest"
                 className="input"
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
-                placeholder="e.g. Galle"
+                placeholder={t('itineraries.toPlaceholder')}
                 maxLength={200}
                 autoFocus
               />
@@ -114,7 +116,7 @@ function NewTripModal({ onClose }) {
           </div>
           
           <div className="field">
-            <label className="label">Stops (Optional)</label>
+            <label className="label">{t('itineraries.stopsLabel')}</label>
             {stops.map((stop, index) => (
               <div key={index} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
                 <input
@@ -125,7 +127,7 @@ function NewTripModal({ onClose }) {
                     newStops[index] = e.target.value
                     setStops(newStops)
                   }}
-                  placeholder="e.g. Kandy"
+                  placeholder={t('itineraries.stopPlaceholder')}
                   maxLength={200}
                   style={{ flex: 1 }}
                 />
@@ -144,25 +146,25 @@ function NewTripModal({ onClose }) {
               onClick={() => setStops([...stops, ''])}
               style={{ padding: '0.25rem 0.5rem', fontSize: '0.875rem' }}
             >
-              + Add Stop
+              {t('itineraries.addStopBtn')}
             </button>
           </div>
 
           <div className="field">
-            <label className="label" htmlFor="trip-description">Trip description (Optional)</label>
+            <label className="label" htmlFor="trip-description">{t('itineraries.descriptionLabel')}</label>
             <textarea
               id="trip-description"
               className="input"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="e.g. A beach trip with sea baths and turtles"
+              placeholder={t('itineraries.descriptionPlaceholder')}
               rows={2}
             />
           </div>
 
           <div className="it-date-row">
             <div className="field">
-              <label className="label" htmlFor="trip-start">Start date</label>
+              <label className="label" htmlFor="trip-start">{t('itineraries.startDate')}</label>
               <input
                 id="trip-start"
                 className="input"
@@ -172,7 +174,7 @@ function NewTripModal({ onClose }) {
               />
             </div>
             <div className="field">
-              <label className="label" htmlFor="trip-end">To date</label>
+              <label className="label" htmlFor="trip-end">{t('itineraries.toDate')}</label>
               <input
                 id="trip-end"
                 className="input"
@@ -185,37 +187,37 @@ function NewTripModal({ onClose }) {
           </div>
           
           <div className="field">
-            <label className="label" htmlFor="trip-prefs">Opinions / Ideas</label>
+            <label className="label" htmlFor="trip-prefs">{t('itineraries.prefsLabel')}</label>
             <textarea
               id="trip-prefs"
               className="input"
               value={preferences}
               onChange={(e) => setPreferences(e.target.value)}
-              placeholder="e.g. I love museums, want to keep it budget-friendly, and prefer morning flights."
+              placeholder={t('itineraries.prefsPlaceholder')}
               style={{ minHeight: '80px', resize: 'vertical' }}
             />
           </div>
 
           <p className={`it-days-hint ${datesInvalid ? 'it-days-hint-error' : ''}`} aria-live="polite">
             {datesInvalid
-              ? 'The end date is before the start date.'
+              ? t('itineraries.dateError')
               : days
-                ? `${days} day${days === 1 ? '' : 's'} of adventure`
-                : 'Pick your travel dates'}
+                ? `${days} ${days === 1 ? t('itineraries.dayOfAdventure') : t('itineraries.daysOfAdventure')}`
+                : t('itineraries.pickDates')}
           </p>
 
           {error && <div className="alert alert-error">{error}</div>}
 
           <div className="it-modal-actions">
             <button type="button" className="btn btn-ghost" onClick={onClose}>
-              Cancel
+              {t('itineraries.cancelBtn')}
             </button>
             <button
               type="submit"
               className="btn btn-primary"
               disabled={!destination.trim() || datesInvalid || submitting}
             >
-              {submitting ? 'Creating…' : 'Create & Plan with AI'}
+              {submitting ? t('itineraries.creatingBtn') : t('itineraries.createBtn')}
             </button>
           </div>
         </form>
@@ -240,6 +242,7 @@ function tripCoverPhotos(previewStops, max = 3) {
 }
 
 function TripCard({ itinerary, onDelete }) {
+  const { t } = useTranslation()
   const days = dayCount(itinerary.start_date, itinerary.end_date)
   const range = formatTripRange(itinerary.start_date, itinerary.end_date)
   const covers = tripCoverPhotos(itinerary.preview_stops)
@@ -271,17 +274,17 @@ function TripCard({ itinerary, onDelete }) {
       <div className="trip-card-body">
         <div className="trip-card-top">
           <div className="trip-card-badges">
-            {days && <span className="badge badge-primary">{days} day{days === 1 ? '' : 's'}</span>}
+            {days && <span className="badge badge-primary">{days} {days === 1 ? t('itineraries.dayCount') : t('itineraries.daysCount')}</span>}
             <span className="badge">
-              {itinerary.item_count} place{itinerary.item_count === 1 ? '' : 's'}
+              {itinerary.item_count} {itinerary.item_count === 1 ? t('itineraries.placeCount') : t('itineraries.placesCount')}
             </span>
           </div>
           <button
             type="button"
             className="trip-card-delete"
             onClick={handleDelete}
-            aria-label={`Delete ${itinerary.title}`}
-            title="Delete trip"
+            aria-label={t('itineraries.deleteAria', { title: itinerary.title })}
+            title={t('itineraries.deleteTitle')}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path
@@ -305,12 +308,12 @@ function TripCard({ itinerary, onDelete }) {
           </p>
         ) : (
           <p className="trip-card-stops trip-card-stops-empty">
-            Nothing planned yet — tap to start adding places.
+            {t('itineraries.nothingPlanned')}
           </p>
         )}
 
         <span className="trip-card-cta" aria-hidden="true">
-          Open planner
+          {t('itineraries.openPlanner')}
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
             <path
               d="M5 12h14m0 0-6-6m6 6-6 6"
@@ -327,6 +330,7 @@ function TripCard({ itinerary, onDelete }) {
 }
 
 export default function Itineraries() {
+  const { t } = useTranslation()
   const [itineraries, setItineraries] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -350,7 +354,7 @@ export default function Itineraries() {
   }, [])
 
   const handleDelete = async (itinerary) => {
-    if (!window.confirm(`Delete “${itinerary.title}” and everything planned in it?`)) return
+    if (!window.confirm(t('itineraries.confirmDelete', { title: itinerary.title }))) return
     const previous = itineraries
     setItineraries((prev) => prev.filter((i) => i.id !== itinerary.id))
     try {
@@ -362,33 +366,32 @@ export default function Itineraries() {
 
   return (
     <PageContainer
-      title="My itineraries"
-      subtitle="Your trips, planned day by day."
+      title={t('itineraries.pageTitle')}
+      subtitle={t('itineraries.pageSubtitle')}
       actions={
         <button type="button" className="btn btn-primary" onClick={() => setShowModal(true)}>
-          + Plan a new trip
+          {t('itineraries.planNewBtn')}
         </button>
       }
     >
       {loading ? (
         <div className="loading-screen">
           <div className="spinner" />
-          <p>Loading your trips…</p>
+          <p>{t('itineraries.loadingTrips')}</p>
         </div>
       ) : error ? (
         <div className="alert alert-error">
-          We couldn't load your itineraries. Refresh the page to try again.
+          {t('itineraries.loadError')}
         </div>
       ) : itineraries.length === 0 ? (
         <div className="explore-empty card">
           <span className="explore-empty-icon" aria-hidden="true">🧳</span>
-          <h3>No trips yet</h3>
+          <h3>{t('itineraries.noTripsTitle')}</h3>
           <p>
-            Create your first itinerary and build it day by day — beaches one
-            morning, ancient cities the next.
+            {t('itineraries.noTripsDesc')}
           </p>
           <button type="button" className="btn btn-primary" onClick={() => setShowModal(true)}>
-            Plan a new trip
+            {t('itineraries.planNewCardBtn')}
           </button>
         </div>
       ) : (

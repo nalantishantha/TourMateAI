@@ -11,6 +11,7 @@
 // stops yet.
 
 import { Fragment, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
 
@@ -72,6 +73,7 @@ function externalUrl(stops, origin) {
 }
 
 export default function TripMapCard({ items, totalDays, routes, startLocation }) {
+  const { t } = useTranslation()
   const [selectedDay, setSelectedDay] = useState(1)
   const day = Math.min(selectedDay, totalDays) // trip may have shrunk
 
@@ -156,10 +158,10 @@ export default function TripMapCard({ items, totalDays, routes, startLocation })
 
   return (
     <div className="card card-pad it-map-card">
-      <h3 className="it-summary-title">Day map</h3>
+      <h3 className="it-summary-title">{t('itineraryBuilder.map.dayMap')}</h3>
 
       {totalDays > 1 && (
-        <div className="it-map-days" role="tablist" aria-label="Pick a day to map">
+        <div className="it-map-days" role="tablist" aria-label={t('itineraryBuilder.map.pickDay')}>
           {dayNumbers.map((d) => (
             <button
               key={d}
@@ -177,7 +179,7 @@ export default function TripMapCard({ items, totalDays, routes, startLocation })
 
       {stops.length === 0 ? (
         <p className="it-map-empty">
-          Add a place to day {day} and its stops will show up on the map here.
+          {t('itineraryBuilder.map.emptyMap', { day })}
         </p>
       ) : (
         <>
@@ -193,7 +195,7 @@ export default function TripMapCard({ items, totalDays, routes, startLocation })
             </div>
           ) : (
             <p className="it-map-empty">
-              Maps aren’t configured — use the link below to see this day’s route.
+              {t('itineraryBuilder.map.notConfigured')}
             </p>
           )}
 
@@ -203,7 +205,7 @@ export default function TripMapCard({ items, totalDays, routes, startLocation })
             (singleWithLocation ? (
               <p className="it-map-total">
                 <span aria-hidden="true">🧭</span>
-                Driving route and time from your location shown above.
+                {t('itineraryBuilder.map.routeShown')}
               </p>
             ) : (
               <div className="it-map-fromme">
@@ -214,18 +216,17 @@ export default function TripMapCard({ items, totalDays, routes, startLocation })
                   disabled={geoState === 'locating'}
                 >
                   {geoState === 'locating'
-                    ? 'Finding you…'
-                    : '📍 Show route from my location'}
+                    ? t('itineraryBuilder.map.findingYou')
+                    : t('itineraryBuilder.map.showRoute')}
                 </button>
                 {geoState === 'denied' && (
                   <p className="it-map-geo-note">
-                    Location access was blocked — allow it to route from where you
-                    are.
+                    {t('itineraryBuilder.map.geoDenied')}
                   </p>
                 )}
                 {geoState === 'unsupported' && (
                   <p className="it-map-geo-note">
-                    This browser can’t share your location.
+                    {t('itineraryBuilder.map.geoUnsupported')}
                   </p>
                 )}
               </div>
@@ -237,12 +238,11 @@ export default function TripMapCard({ items, totalDays, routes, startLocation })
               <span aria-hidden="true">🚗</span>
               <strong>{formatDuration(route.total_duration_s)}</strong>
               {' · '}
-              {formatDistance(route.total_distance_m)} driving ·{' '}
-              {stops.length} stops
+              {formatDistance(route.total_distance_m)} {t('itineraryBuilder.map.drivingStops', { stops: stops.length })}
             </p>
           )}
           {route?.state === 'loading' && stops.length > 1 && (
-            <p className="it-map-total muted">Calculating drive times…</p>
+            <p className="it-map-total muted">{t('itineraryBuilder.map.calculatingDrive')}</p>
           )}
 
           <ol className="it-map-stops">
@@ -253,7 +253,7 @@ export default function TripMapCard({ items, totalDays, routes, startLocation })
                     {index + 1}
                   </span>
                   <span className="it-map-stop-name">
-                    {typeof stop === 'string' ? `Start: ${stop}` : stop.name}
+                    {typeof stop === 'string' ? t('itineraryBuilder.map.start', { stop }) : stop.name}
                   </span>
                 </li>
                 {legs[index] && (
@@ -277,8 +277,8 @@ export default function TripMapCard({ items, totalDays, routes, startLocation })
             rel="noreferrer"
           >
             {stops.length > 1 || singleWithLocation
-              ? 'Open route in Google Maps ↗'
-              : 'Open in Google Maps ↗'}
+              ? t('itineraryBuilder.map.openRoute')
+              : t('itineraryBuilder.map.openMaps')}
           </a>
         </>
       )}
