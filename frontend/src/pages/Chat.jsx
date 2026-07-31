@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import ChatMessage, { BotAvatar, TypingIndicator } from '../components/chat/ChatMessage'
 import { scenes } from '../assets/photos'
 import {
@@ -11,11 +12,11 @@ import {
 } from '../services/chat'
 import '../styles/chat.css'
 
-const QUICK_PROMPTS = [
-  { text: 'What are the best beaches?', scene: scenes.hikkaduwaBeach },
-  { text: 'Where can I see elephants and leopards?', scene: scenes.leopard },
-  { text: 'Which heritage sites should I not miss?', scene: scenes.sigiriyaGround },
-  { text: 'When is the best season to visit?', scene: scenes.stiltFishing },
+const getQuickPrompts = (t) => [
+  { text: t('chat.prompts.beaches'), scene: scenes.hikkaduwaBeach },
+  { text: t('chat.prompts.wildlife'), scene: scenes.leopard },
+  { text: t('chat.prompts.heritage'), scene: scenes.sigiriyaGround },
+  { text: t('chat.prompts.season'), scene: scenes.stiltFishing },
 ]
 
 const COMPOSER_MAX_HEIGHT = 132
@@ -36,6 +37,7 @@ function historyRowToTurns(row) {
 }
 
 export default function Chat() {
+  const { t } = useTranslation()
   const [sessions, setSessions] = useState([])
   const [activeSessionId, setActiveSessionId] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -142,7 +144,7 @@ export default function Chat() {
 
   const handleDeleteSession = async (e, id) => {
     e.stopPropagation()
-    if (!window.confirm('Delete this chat?')) return
+    if (!window.confirm(t('chat.confirmDelete'))) return
     try {
       await deleteChatSession(id)
       setSessions((prev) => prev.filter((s) => s.id !== id))
@@ -250,12 +252,12 @@ export default function Chat() {
       {sidebarOpen && (
         <div className="chat-sidebar card">
           <div className="chat-sidebar-header">
-            <h2 style={{ fontSize: 'var(--text-lg)' }}>Recent Chats</h2>
+            <h2 style={{ fontSize: 'var(--text-lg)' }}>{t('chat.sidebarTitle')}</h2>
             <div style={{ display: 'flex', gap: '4px' }}>
               <button type="button" className="btn btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: 'var(--text-sm)' }} onClick={handleNewChat}>
-                + New
+                {t('chat.newChatBtn')}
               </button>
-              <button type="button" className="btn btn-ghost" style={{ padding: '0.4rem' }} onClick={() => setSidebarOpen(false)} title="Close Sidebar">
+              <button type="button" className="btn btn-ghost" style={{ padding: '0.4rem' }} onClick={() => setSidebarOpen(false)} title={t('chat.closeSidebar')}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
               </button>
             </div>
@@ -265,7 +267,7 @@ export default function Chat() {
             {loadingSessions ? (
               <div className="spinner" style={{ alignSelf: 'center', marginTop: '1rem' }} />
             ) : sessions.length === 0 ? (
-              <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', textAlign: 'center', marginTop: '1rem' }}>No recent chats.</p>
+              <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', textAlign: 'center', marginTop: '1rem' }}>{t('chat.noRecentChats')}</p>
             ) : (
               sessions.map((session) => (
                 <div
@@ -283,16 +285,16 @@ export default function Chat() {
                         autoFocus
                         style={{ flex: 1, padding: '2px 4px', fontSize: 'var(--text-sm)' }}
                       />
-                      <button type="submit" className="btn btn-primary" style={{ padding: '2px 8px' }} onClick={(e) => e.stopPropagation()}>Save</button>
+                      <button type="submit" className="btn btn-primary" style={{ padding: '2px 8px' }} onClick={(e) => e.stopPropagation()}>{t('chat.saveBtn')}</button>
                     </form>
                   ) : (
                     <>
                       <span className="chat-session-title" title={session.title}>{session.title}</span>
                       <div className="chat-session-actions">
-                        <button className="chat-session-btn" onClick={(e) => handleStartRename(e, session)} title="Rename">
+                        <button className="chat-session-btn" onClick={(e) => handleStartRename(e, session)} title={t('chat.renameBtn')}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                         </button>
-                        <button className="chat-session-btn" onClick={(e) => handleDeleteSession(e, session.id)} title="Delete">
+                        <button className="chat-session-btn" onClick={(e) => handleDeleteSession(e, session.id)} title={t('chat.deleteBtn')}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                         </button>
                       </div>
@@ -310,13 +312,13 @@ export default function Chat() {
         <div className="chat-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {!sidebarOpen && (
-              <button type="button" className="btn btn-ghost" style={{ padding: '0.4rem', border: '1px solid var(--color-border-subtle)', background: 'var(--color-surface)' }} onClick={() => setSidebarOpen(true)} title="Open Sidebar">
+              <button type="button" className="btn btn-ghost" style={{ padding: '0.4rem', border: '1px solid var(--color-border-subtle)', background: 'var(--color-surface)' }} onClick={() => setSidebarOpen(true)} title={t('chat.openSidebar')}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
               </button>
             )}
             <div>
-              <h1 className="chat-title">Ask TourMate</h1>
-              <p className="chat-subtitle">Your AI travel guide for Sri Lanka</p>
+              <h1 className="chat-title">{t('chat.headerTitle')}</h1>
+              <p className="chat-subtitle">{t('chat.headerSubtitle')}</p>
             </div>
           </div>
         </div>
@@ -326,26 +328,24 @@ export default function Chat() {
             {loadingMessages ? (
               <div className="chat-state">
                 <div className="spinner" />
-                <p>Loading your conversation…</p>
+                <p>{t('chat.loadingHistory')}</p>
               </div>
             ) : messages.length === 0 ? (
               <div className="chat-welcome">
                 <div className="chat-welcome-avatar">
                   <BotAvatar />
                 </div>
-                <h2>Ayubowan! Where shall we go?</h2>
+                <h2>{t('chat.welcomeTitle')}</h2>
                 <p>
-                  Ask me anything about traveling in Sri Lanka — beaches, wildlife,
-                  heritage sites, hiking, or when to visit.
+                  {t('chat.welcomeDesc')}
                 </p>
                 {loadError && (
                   <div className="alert alert-error chat-load-error">
-                    We couldn't load your previous conversation, but you can start
-                    chatting right away.
+                    {t('chat.loadError')}
                   </div>
                 )}
                 <div className="chat-prompts">
-                  {QUICK_PROMPTS.map(({ text, scene }) => (
+                  {getQuickPrompts(t).map(({ text, scene }) => (
                     <button
                       key={text}
                       type="button"
@@ -370,7 +370,7 @@ export default function Chat() {
                   <div key={message.id} className="chat-msg-slot">
                     {showEarlierDivider && index === historyCount && (
                       <div className="chat-divider" role="separator">
-                        <span>New messages</span>
+                        <span>{t('chat.newMessagesDivider')}</span>
                       </div>
                     )}
                     <ChatMessage message={message} onRetry={retry} />
@@ -386,18 +386,18 @@ export default function Chat() {
               ref={textareaRef}
               className="chat-input"
               rows={1}
-              placeholder="Ask about beaches, temples, safaris…"
+              placeholder={t('chat.inputPlaceholder')}
               value={input}
               onChange={handleInput}
               onKeyDown={handleKeyDown}
               maxLength={2000}
-              aria-label="Message TourMate"
+              aria-label={t('chat.inputAria')}
             />
             <button
               type="submit"
               className="chat-send"
               disabled={!input.trim() || sending}
-              aria-label="Send message"
+              aria-label={t('chat.sendAria')}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path
@@ -410,7 +410,7 @@ export default function Chat() {
               </svg>
             </button>
           </form>
-          <p className="chat-hint">Enter to send · Shift + Enter for a new line</p>
+          <p className="chat-hint">{t('chat.inputHint')}</p>
         </div>
       </div>
     </div>

@@ -4,6 +4,7 @@
 // a whole day can be filled in one visit.
 
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import AttractionImage from '../explore/AttractionImage'
 import { fetchAttractions } from '../../services/attractions'
 
@@ -11,6 +12,7 @@ const SEARCH_DEBOUNCE_MS = 300
 const RESULTS_PER_PAGE = 8
 
 export default function AttractionPicker({ dayNumber, dateLabel, plannedIds, alreadyInDayIds = new Set(), onAdd, onClose }) {
+  const { t } = useTranslation()
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
@@ -100,10 +102,10 @@ export default function AttractionPicker({ dayNumber, dateLabel, plannedIds, alr
       >
         <div className="it-modal-head">
           <h2 id="picker-title">
-            Add to Day {dayNumber}
+            {t('itineraryBuilder.picker.addToDay')} {dayNumber}
             {dateLabel && <span className="it-picker-date"> · {dateLabel}</span>}
           </h2>
-          <button type="button" className="it-modal-close" onClick={onClose} aria-label="Close">
+          <button type="button" className="it-modal-close" onClick={onClose} aria-label={t('itineraryBuilder.picker.closeBtn')}>
             ✕
           </button>
         </div>
@@ -114,8 +116,8 @@ export default function AttractionPicker({ dayNumber, dateLabel, plannedIds, alr
           className="input"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          placeholder="Search attractions — try “temple” or “beach”…"
-          aria-label="Search attractions to add"
+          placeholder={t('itineraryBuilder.picker.searchPlaceholder')}
+          aria-label={t('itineraryBuilder.picker.searchAria')}
         />
 
         <div className="it-picker-results">
@@ -124,10 +126,10 @@ export default function AttractionPicker({ dayNumber, dateLabel, plannedIds, alr
               <div className="spinner" />
             </div>
           ) : error ? (
-            <p className="it-picker-note">Search failed — check your connection and try again.</p>
+            <p className="it-picker-note">{t('itineraryBuilder.picker.searchFailed')}</p>
           ) : results.length === 0 ? (
             <p className="it-picker-note">
-              No places match {search ? `“${search}”` : 'that'}. Try another word.
+              {t('itineraryBuilder.picker.noMatches')}
             </p>
           ) : (
           results.map((attraction) => {
@@ -162,14 +164,14 @@ export default function AttractionPicker({ dayNumber, dateLabel, plannedIds, alr
                     title={inThisDay ? `${attraction.name} is already in Day ${dayNumber}` : undefined}
                   >
                     {addingId === attraction.id
-                      ? 'Adding…'
+                      ? t('itineraryBuilder.picker.adding')
                       : justAdded
-                        ? '✓ Added'
+                        ? t('itineraryBuilder.picker.added')
                         : inThisDay
-                          ? '✓ In this day'
+                          ? t('itineraryBuilder.picker.inThisDay')
                           : inOtherDay
-                            ? '+ Add again'
-                            : '+ Add'}
+                            ? t('itineraryBuilder.picker.addAgain')
+                            : t('itineraryBuilder.picker.add')}
                   </button>
                 </div>
               )
@@ -183,17 +185,13 @@ export default function AttractionPicker({ dayNumber, dateLabel, plannedIds, alr
                 onClick={() => setPage((p) => p + 1)}
                 disabled={loadingMore}
               >
-                {loadingMore ? 'Loading…' : 'Load more places'}
+                {loadingMore ? t('itineraryBuilder.picker.loadingMore') : t('itineraryBuilder.picker.loadMoreBtn')}
               </button>
             </div>
           )}
         </div>
 
-        <p className="it-picker-hint">
-          Places already in <strong>this day</strong> show "✓ In this day" and
-          can't be added again. Revisiting the same spot on a different day is
-          fine — those show "+ Add again".
-        </p>
+        <p className="it-picker-hint" dangerouslySetInnerHTML={{ __html: t('itineraryBuilder.picker.hint') }} />
       </div>
     </div>
   )

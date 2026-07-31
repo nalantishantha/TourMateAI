@@ -12,6 +12,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import AttractionImage from '../components/explore/AttractionImage'
 import AttractionPicker from '../components/itinerary/AttractionPicker'
 import { attractionPhoto, scenes } from '../assets/photos'
@@ -45,6 +46,7 @@ function DragHandleIcon() {
 
 /** One attraction row inside a day — draggable, removable, links to detail. */
 function DayItemRow({ item, dragging, onDragStart, onDragEnter, onDragEnd, onRemove }) {
+  const { t } = useTranslation()
   const attraction = item.attraction
   const hotel = item.hotel
   return (
@@ -62,7 +64,7 @@ function DayItemRow({ item, dragging, onDragStart, onDragEnter, onDragEnd, onRem
       onDragEnd={onDragEnd}
       onDrop={(e) => e.preventDefault()}
     >
-      <span className="it-item-handle" title="Drag to reorder" aria-hidden="true">
+      <span className="it-item-handle" title={t('itineraryBuilder.dragToReorder')} aria-hidden="true">
         <DragHandleIcon />
       </span>
       <div className="it-item-thumb">
@@ -81,10 +83,10 @@ function DayItemRow({ item, dragging, onDragStart, onDragEnter, onDragEnd, onRem
           </Link>
         ) : hotel ? (
           <span className="it-item-name">
-            {hotel.name} <span style={{fontSize: '0.85em', color: '#666', fontWeight: 'normal', marginLeft: '4px'}}>· Hotel</span>
+            {hotel.name} <span style={{fontSize: '0.85em', color: '#666', fontWeight: 'normal', marginLeft: '4px'}}>· {t('itineraryBuilder.hotelLabel')}</span>
           </span>
         ) : (
-          <span className="it-item-name">Removed item</span>
+          <span className="it-item-name">{t('itineraryBuilder.removedItem')}</span>
         )}
         <span className="it-item-meta">
           {attraction ? (
@@ -171,6 +173,7 @@ function formatDuration(seconds) {
 /** Per-day driving route summary + the optimize-order suggestion flow.
  * Hidden entirely until a day has two located stops (no route to show). */
 function DayRouteSummary({ locatedItems, route, suggestion, onOptimize, onApply, onDismiss }) {
+  const { t } = useTranslation()
   if (locatedItems.length < 2) return null
 
   // A suggestion is only shown while the day's order still matches the one it
@@ -194,16 +197,16 @@ function DayRouteSummary({ locatedItems, route, suggestion, onOptimize, onApply,
       <div className="it-day-route">
         <span className="it-route-car" aria-hidden="true">🚗</span>
         {!route || route.state === 'loading' ? (
-          <span className="it-route-text muted">Calculating route…</span>
+          <span className="it-route-text muted">{t('itineraryBuilder.calculatingRoute')}</span>
         ) : route.state === 'ok' ? (
           <span className="it-route-text">
             <strong>{formatDuration(route.total_duration_s)}</strong>
             {' · '}
-            {formatDistance(route.total_distance_m)} driving between{' '}
-            {locatedItems.length} stops
+            {formatDistance(route.total_distance_m)} {t('itineraryBuilder.drivingBetween')}{' '}
+            {locatedItems.length} {t('itineraryBuilder.stops')}
           </span>
         ) : (
-          <span className="it-route-text muted">Route info unavailable right now</span>
+          <span className="it-route-text muted">{t('itineraryBuilder.routeUnavailable')}</span>
         )}
         {canOptimize && (
           <button
@@ -212,26 +215,26 @@ function DayRouteSummary({ locatedItems, route, suggestion, onOptimize, onApply,
             onClick={onOptimize}
             disabled={live?.state === 'loading' || applying}
           >
-            {live?.state === 'loading' ? 'Optimizing…' : '✨ Optimize order'}
+            {live?.state === 'loading' ? t('itineraryBuilder.optimizingBtn') : t('itineraryBuilder.optimizeBtn')}
           </button>
         )}
       </div>
 
       {live?.state === 'already-optimal' && (
         <p className="it-route-note ok" role="status">
-          ✓ This order is already the fastest route.
+          {t('itineraryBuilder.alreadyOptimal')}
         </p>
       )}
       {live?.state === 'error' && (
         <p className="it-route-note muted" role="status">
-          Couldn’t get a suggestion right now — try again later.
+          {t('itineraryBuilder.suggestionError')}
         </p>
       )}
       {(live?.state === 'ready' || applying) && (
         <div className="it-route-suggest" role="status">
           <p className="it-route-suggest-title">
-            Faster order found
-            {savedSeconds > 60 ? ` — saves about ${formatDuration(savedSeconds)}` : ''}
+            {t('itineraryBuilder.fasterOrderFound')}
+            {savedSeconds > 60 ? `${t('itineraryBuilder.savesAbout')} ${formatDuration(savedSeconds)}` : ''}
           </p>
           <ol className="it-route-suggest-list">
             {live.itemIds.map((itemId) => (
@@ -245,7 +248,7 @@ function DayRouteSummary({ locatedItems, route, suggestion, onOptimize, onApply,
               onClick={onApply}
               disabled={applying}
             >
-              {applying ? 'Applying…' : 'Apply this order'}
+              {applying ? t('itineraryBuilder.applyingBtn') : t('itineraryBuilder.applyBtn')}
             </button>
             <button
               type="button"
@@ -253,7 +256,7 @@ function DayRouteSummary({ locatedItems, route, suggestion, onOptimize, onApply,
               onClick={onDismiss}
               disabled={applying}
             >
-              Dismiss
+              {t('itineraryBuilder.dismissBtn')}
             </button>
           </div>
         </div>
@@ -276,6 +279,7 @@ function weatherGroup(condition) {
 
 /** Weather, as part of the day's at-a-glance line — a compact, tinted chip. */
 function DayGlanceWeather({ weather }) {
+  const { t } = useTranslation()
   if (!weather) return null
   if (weather.state === 'ok') {
     const label = weather.description || weather.condition || ''
@@ -319,7 +323,7 @@ function DayGlanceWeather({ weather }) {
         title="Beyond the 5-day forecast window"
       >
         <span className="it-weather-chip-icon" aria-hidden="true">🗓️</span>
-        <span className="it-weather-chip-note">Forecast later</span>
+        <span className="it-weather-chip-note">{t('itineraryBuilder.forecastLater')}</span>
       </span>
     )
   }
@@ -327,7 +331,7 @@ function DayGlanceWeather({ weather }) {
     return (
       <span className="it-weather-chip is-muted">
         <span className="it-weather-chip-icon" aria-hidden="true">🌡️</span>
-        <span className="it-weather-chip-note">Weather n/a</span>
+        <span className="it-weather-chip-note">{t('itineraryBuilder.weatherNa')}</span>
       </span>
     )
   }
@@ -366,6 +370,7 @@ function BuilderSkeleton() {
 // import AITripViewer from './AITripViewer'
 
 export default function ItineraryBuilder() {
+  const { t } = useTranslation()
   const { id } = useParams()
   const location = useLocation()
 
@@ -932,10 +937,10 @@ export default function ItineraryBuilder() {
       <div className="page page-narrow">
         <div className="explore-empty card">
           <span className="explore-empty-icon" aria-hidden="true">🧳</span>
-          <h3>Trip not found</h3>
-          <p>This itinerary doesn't exist or isn't yours.</p>
+          <h3>{t('itineraryBuilder.tripNotFound')}</h3>
+          <p>{t('itineraryBuilder.tripNotExist')}</p>
           <Link to="/itineraries" className="btn btn-primary">
-            Back to my itineraries
+            {t('itineraryBuilder.backToMyItineraries')}
           </Link>
         </div>
       </div>
@@ -959,10 +964,10 @@ export default function ItineraryBuilder() {
               strokeLinejoin="round"
             />
           </svg>
-          My itineraries
+          {t('itineraryBuilder.myItineraries')}
         </Link>
         <button className="btn btn-primary" onClick={handleGeneratePdf} disabled={generatingPdf}>
-          {generatingPdf ? 'Generating PDF...' : 'Download PDF'}
+          {generatingPdf ? t('itineraryBuilder.generatingPdf') : t('itineraryBuilder.downloadPdf')}
         </button>
       </div>
 
@@ -985,19 +990,19 @@ export default function ItineraryBuilder() {
               onBlur={commitTitle}
               onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
               maxLength={200}
-              aria-label="Trip name"
+              aria-label={t('itineraryBuilder.tripNameAria')}
             />
             <p className="it-hero-facts">
-              {totalDays} day{totalDays === 1 ? '' : 's'}
+              {totalDays} {totalDays === 1 ? t('itineraries.dayCount') : t('itineraries.daysCount')}
               {items.length > 0 &&
-                ` · ${items.length} place${items.length === 1 ? '' : 's'}`}
+                ` · ${items.length} ${items.length === 1 ? t('itineraries.placeCount') : t('itineraries.placesCount')}`}
               {range && ` · ${range}`}
             </p>
           </div>
         </div>
         <div className="it-hero-bar">
           <div className="it-hero-date">
-            <label className="it-hero-date-label" htmlFor="it-start">Start</label>
+            <label className="it-hero-date-label" htmlFor="it-start">{t('itineraryBuilder.startLabel')}</label>
             <input
               id="it-start"
               className="input it-hero-date-input"
@@ -1008,7 +1013,7 @@ export default function ItineraryBuilder() {
           </div>
           <span className="it-hero-date-arrow" aria-hidden="true">→</span>
           <div className="it-hero-date">
-            <label className="it-hero-date-label" htmlFor="it-end">End</label>
+            <label className="it-hero-date-label" htmlFor="it-end">{t('itineraryBuilder.endLabel')}</label>
             <input
               id="it-end"
               className="input it-hero-date-input"
@@ -1020,7 +1025,7 @@ export default function ItineraryBuilder() {
           </div>
           {datesInvalid && (
             <p className="it-days-hint it-days-hint-error">
-              End date is before the start date — not saved yet.
+              {t('itineraryBuilder.endDateBeforeStart')}
             </p>
           )}
           <span
@@ -1028,9 +1033,9 @@ export default function ItineraryBuilder() {
             role="status"
             aria-live="polite"
           >
-            {saveState === 'saving' && 'Saving…'}
-            {saveState === 'saved' && '✓ Saved'}
-            {saveState === 'error' && "Couldn't save — retry your last change"}
+            {saveState === 'saving' && t('itineraryBuilder.saving')}
+            {saveState === 'saved' && t('itineraryBuilder.saved')}
+            {saveState === 'error' && t('itineraryBuilder.saveError')}
           </span>
         </div>
       </header>
@@ -1053,13 +1058,13 @@ export default function ItineraryBuilder() {
                 aria-current={activeDay === day ? 'true' : undefined}
               >
                 <span className="it-strip-top">
-                  Day {day}
+                  {t('itineraryBuilder.dayNum')} {day}
                   {w?.state === 'ok' && (
                     <span className="it-strip-emoji" aria-hidden="true">{w.emoji}</span>
                   )}
                 </span>
                 <span className="it-strip-sub">
-                  {stripDate || (count ? `${count} stop${count === 1 ? '' : 's'}` : 'free')}
+                  {stripDate || (count ? `${count} ${t('itineraryBuilder.stops')}` : t('itineraryBuilder.free'))}
                 </span>
                 <span
                   className="it-strip-dots"
@@ -1095,10 +1100,9 @@ export default function ItineraryBuilder() {
                 )
               )}
               </div>
-              <h3>Start building your trip</h3>
+              <h3>{t('itineraryBuilder.startBuilding')}</h3>
               <p>
-                Search Sri Lanka’s best places — beaches, temples, safaris,
-                train rides — and drop them into your days below.
+                {t('itineraryBuilder.startBuildingDesc')}
               </p>
               <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
                 <button
@@ -1106,7 +1110,7 @@ export default function ItineraryBuilder() {
                   className="btn btn-primary"
                   onClick={() => setPickerDay(1)}
                 >
-                  + Add your first place
+                  {t('itineraryBuilder.addFirstPlaceBtn')}
                 </button>
                 <button
                   type="button"
@@ -1114,7 +1118,7 @@ export default function ItineraryBuilder() {
                   onClick={() => handleAutoGenerate()}
                   disabled={saveState === 'saving'}
                 >
-                  {saveState === 'saving' ? 'Generating...' : '✨ Auto-Generate Trip with AI'}
+                  {saveState === 'saving' ? t('itineraryBuilder.generatingBtn') : t('itineraryBuilder.autoGenerateBtn')}
                 </button>
               </div>
             </div>
@@ -1141,15 +1145,15 @@ export default function ItineraryBuilder() {
                 <div className="it-day-main">
                   <div className="it-day-head">
                     <div className="it-day-heading">
-                      <h2 className="it-day-title">Day {day}</h2>
+                      <h2 className="it-day-title">{t('itineraryBuilder.dayNum')} {day}</h2>
                       {dateLabel && <span className="it-day-date">{dateLabel}</span>}
                     </div>
                     <div className="it-day-glance">
                       <DayGlanceWeather weather={dayW} />
                       <span className="it-glance-count">
                         {dayItems.length
-                          ? `${dayItems.length} place${dayItems.length === 1 ? '' : 's'}`
-                          : 'free day'}
+                          ? `${dayItems.length} ${t('itineraryBuilder.stops')}`
+                          : t('itineraryBuilder.freeDay')}
                       </span>
                     </div>
                   </div>
@@ -1162,13 +1166,13 @@ export default function ItineraryBuilder() {
                           {dayW.description
                             ? dayW.description.charAt(0).toUpperCase() +
                               dayW.description.slice(1)
-                            : 'Rain expected'}
+                            : t('itineraryBuilder.rainExpected')}
                           {typeof dayW.rainChance === 'number'
-                            ? ` (${dayW.rainChance}% chance)`
+                            ? ` (${dayW.rainChance}%)`
                             : ''}
                           .
                         </strong>{' '}
-                        A good day for indoor stops — temples, museums, tea rooms.
+                        {t('itineraryBuilder.indoorStopsSuggest')}
                       </span>
                     </div>
                   )}
@@ -1180,7 +1184,7 @@ export default function ItineraryBuilder() {
                       onClick={() => setPickerDay(day)}
                     >
                       <span className="it-day-empty-plus" aria-hidden="true">+</span>
-                      Nothing planned yet — add your first stop
+                      {t('itineraryBuilder.nothingPlanned')}
                     </button>
                   ) : (
                     <>
@@ -1212,7 +1216,7 @@ export default function ItineraryBuilder() {
                         className="btn btn-ghost it-day-add"
                         onClick={() => setPickerDay(day)}
                       >
-                        + Add a place
+                        {t('itineraryBuilder.addPlaceBtn')}
                       </button>
                     </>
                   )}
@@ -1231,10 +1235,10 @@ export default function ItineraryBuilder() {
                 onClick={() => goToDay(activeDay - 1)}
                 disabled={activeDay <= 1}
               >
-                ‹ {activeDay > 1 ? `Day ${activeDay - 1}` : 'Day'}
+                ‹ {activeDay > 1 ? `${t('itineraryBuilder.dayNum')} ${activeDay - 1}` : t('itineraryBuilder.dayNum')}
               </button>
               <span className="it-day-nav-label">
-                Day {activeDay} of {totalDays}
+                {t('itineraryBuilder.dayOfTotal', { activeDay, totalDays })}
               </span>
               <button
                 type="button"
@@ -1242,7 +1246,7 @@ export default function ItineraryBuilder() {
                 onClick={() => goToDay(activeDay + 1)}
                 disabled={activeDay >= totalDays}
               >
-                {activeDay < totalDays ? `Day ${activeDay + 1}` : 'Day'} ›
+                {activeDay < totalDays ? `${t('itineraryBuilder.dayNum')} ${activeDay + 1}` : t('itineraryBuilder.dayNum')} ›
               </button>
             </div>
           )}
@@ -1250,25 +1254,25 @@ export default function ItineraryBuilder() {
 
         <aside className="it-summary">
           <div className="card card-pad">
-            <h3 className="it-summary-title">Trip summary</h3>
+            <h3 className="it-summary-title">{t('itineraryBuilder.tripSummary')}</h3>
             <dl className="it-summary-stats">
               <div className="it-summary-stat">
-                <dt>Days</dt>
+                <dt>{t('itineraryBuilder.daysStat')}</dt>
                 <dd>{totalDays}</dd>
               </div>
               <div className="it-summary-stat">
-                <dt>Attractions</dt>
+                <dt>{t('itineraryBuilder.attractionsStat')}</dt>
                 <dd>{items.length}</dd>
               </div>
               <div className="it-summary-stat">
-                <dt>Days with plans</dt>
+                <dt>{t('itineraryBuilder.daysWithPlansStat')}</dt>
                 <dd>
                   {daysCovered}/{totalDays}
                 </dd>
               </div>
               {totalDriveSeconds > 0 && (
                 <div className="it-summary-stat">
-                  <dt>Driving</dt>
+                  <dt>{t('itineraryBuilder.drivingStat')}</dt>
                   <dd className="it-summary-drive">{formatDuration(totalDriveSeconds)}</dd>
                 </div>
               )}
@@ -1297,10 +1301,10 @@ export default function ItineraryBuilder() {
                   />
                 </svg>
                 {weatherState === 'loading'
-                  ? 'Checking the forecast…'
+                  ? t('itineraryBuilder.checkingForecast')
                   : weatherState === 'done'
-                    ? 'Refresh forecast'
-                    : 'Get weather-aware suggestions'}
+                    ? t('itineraryBuilder.refreshForecast')
+                    : t('itineraryBuilder.getWeatherSuggestions')}
               </button>
 
               {weatherState === 'done' && (

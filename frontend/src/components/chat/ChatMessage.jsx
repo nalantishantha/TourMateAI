@@ -3,6 +3,7 @@
 // text. Also exports the "assistant is thinking" indicator, which reuses the
 // same row layout so the pending state sits exactly where the reply will land.
 
+import { useTranslation } from 'react-i18next'
 import ChatSuggestionCard from './ChatSuggestionCard'
 
 export function BotAvatar() {
@@ -24,6 +25,7 @@ export function BotAvatar() {
 }
 
 export default function ChatMessage({ message, onRetry }) {
+  const { t } = useTranslation()
   const isUser = message.role === 'user'
 
   return (
@@ -40,7 +42,7 @@ export default function ChatMessage({ message, onRetry }) {
             className="chat-retry"
             onClick={() => onRetry(message)}
           >
-            Not sent — tap to retry
+            {t('chat.retryBtn')}
           </button>
         )}
 
@@ -58,8 +60,9 @@ export default function ChatMessage({ message, onRetry }) {
 
 // Shown while a reply is in flight.
 export function TypingIndicator() {
+  const { t } = useTranslation()
   return (
-    <div className="chat-msg chat-msg-assistant" aria-label="TourMate is typing">
+    <div className="chat-msg chat-msg-assistant" aria-label={t('chat.typingIndicator')}>
       <BotAvatar />
       <div className="chat-msg-content">
         <div className="chat-bubble chat-typing">

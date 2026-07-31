@@ -9,6 +9,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import PageContainer from '../components/layout/PageContainer'
 import AttractionImage from '../components/explore/AttractionImage'
 import { scenes } from '../assets/photos'
@@ -24,25 +25,26 @@ const ACCEPT = 'image/jpeg,image/png,image/webp'
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 
 const MIN_SCAN_MS = 2600
-const SCAN_STEPS = [
-  'Scanning image…',
-  'Detecting landmark features…',
-  'Matching against known landmarks…',
+const getScanSteps = (t) => [
+  t('identify.scanning'),
+  t('identify.detecting'),
+  t('identify.matching'),
 ]
 const SCAN_STEP_MS = 900
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
-function confidenceTone(confidence) {
-  if (confidence >= 0.75) return { tone: 'high', label: 'High confidence' }
-  if (confidence >= 0.5) return { tone: 'mid', label: 'Medium confidence' }
-  return { tone: 'low', label: 'Low confidence' }
+function confidenceTone(confidence, t) {
+  if (confidence >= 0.75) return { tone: 'high', label: t('identify.highConf') }
+  if (confidence >= 0.5) return { tone: 'mid', label: t('identify.midConf') }
+  return { tone: 'low', label: t('identify.lowConf') }
 }
 
 /** Confidence as a labelled meter, not a bare number. */
 function ConfidenceMeter({ confidence }) {
+  const { t } = useTranslation()
   const pct = Math.round((confidence || 0) * 100)
-  const { tone, label } = confidenceTone(confidence || 0)
+  const { tone, label } = confidenceTone(confidence || 0, t)
   return (
     <div className="idf-confidence">
       <div className="idf-confidence-head">
@@ -79,8 +81,9 @@ function CameraIcon() {
 
 /** One past upload. Links to the matched attraction when there is one. */
 function HistoryItem({ item }) {
+  const { t } = useTranslation()
   const pct = Math.round((item.confidence || 0) * 100)
-  const { tone } = confidenceTone(item.confidence || 0)
+  const { tone } = confidenceTone(item.confidence || 0, t)
   const date = item.created_at
     ? new Date(item.created_at).toLocaleDateString(undefined, {
         day: 'numeric',
@@ -94,13 +97,13 @@ function HistoryItem({ item }) {
       <img
         className="idf-history-thumb"
         src={uploadedImageUrl(item.image_url)}
-        alt={item.identified_name || 'Uploaded photo'}
+        alt={item.identified_name || t('identify.uploadedPhoto')}
         loading="lazy"
       />
       <div className="idf-history-body">
-        <span className="idf-history-name">{item.identified_name || 'Unknown'}</span>
+        <span className="idf-history-name">{item.identified_name || t('identify.unknown')}</span>
         <span className="idf-history-meta">
-          <span className={`idf-history-pct idf-tone-${tone}`}>{pct}% match</span>
+          <span className={`idf-history-pct idf-tone-${tone}`}>{pct}% {t('identify.match')}</span>
           {date && (
             <>
               <span aria-hidden="true"> · </span>
@@ -141,6 +144,7 @@ function HistoryItem({ item }) {
 }
 
 export default function Identify() {
+  const { t } = useTranslation()
   // idle (dropzone) -> preview (file chosen) -> scanning -> result
   const [phase, setPhase] = useState('idle')
   const [file, setFile] = useState(null)
@@ -185,20 +189,20 @@ export default function Identify() {
     if (phase !== 'scanning') return undefined
     setScanStep(0)
     const timer = setInterval(
-      () => setScanStep((step) => Math.min(step + 1, SCAN_STEPS.length - 1)),
+      () => setScanStep((step) => Math.min(step + 1, getScanSteps(t).length - 1)),
       SCAN_STEP_MS
     )
     return () => clearInterval(timer)
-  }, [phase])
+  }, [phase, t])
 
   const selectFile = (candidate) => {
     if (!candidate) return
     if (!ALLOWED_TYPES.includes(candidate.type)) {
-      setError('Please choose a JPG, PNG, or WebP image.')
+      setError(t('identify.errorFormat'))
       return
     }
     if (candidate.size > MAX_FILE_MB * 1024 * 1024) {
-      setError(`That photo is too large — the limit is ${MAX_FILE_MB} MB.`)
+      setError(`${t('identify.errorSize')} ${MAX_FILE_MB} MB.`)
       return
     }
     setError(null)
@@ -237,7 +241,7 @@ export default function Identify() {
     } catch (err) {
       setError(
         err?.response?.data?.error ||
-          "We couldn't analyze that photo. Please try again."
+          t('identify.errorAnalyze')
       )
       setPhase('preview')
     }
@@ -255,8 +259,8 @@ export default function Identify() {
 
   return (
     <PageContainer
-      title="Identify a landmark"
-      subtitle="Upload a photo and TourMate's AI will name the place."
+      title={t('identify.pageTitle')}
+      subtitle={t('identify.pageSubtitle')}
       width="narrow"
     >
       <input
@@ -290,10 +294,9 @@ export default function Identify() {
               <CameraIcon />
             </span>
           </span>
-          <span className="idf-dropzone-title">Drop a photo here</span>
+          <span className="idf-dropzone-title">{t('identify.dropTitle')}</span>
           <span className="idf-dropzone-sub">
-            or <span className="idf-dropzone-browse">browse your files</span> — JPG,
-            PNG, or WebP up to {MAX_FILE_MB} MB
+            {t('identify.dropSubtitle1')} <span className="idf-dropzone-browse">{t('identify.dropSubtitle2')}</span> {t('identify.dropSubtitle3')} {MAX_FILE_MB} MB
           </span>
         </label>
       )}
@@ -301,7 +304,7 @@ export default function Identify() {
       {phase !== 'idle' && (
         <div className="idf-stage card">
           <div className={`idf-frame ${phase === 'scanning' ? 'idf-frame-scanning' : ''}`}>
-            <img className="idf-preview" src={previewUrl} alt="Your uploaded photo" />
+            <img className="idf-preview" src={previewUrl} alt={t('identify.previewAlt')} />
             {phase === 'scanning' && (
               <div className="idf-scan-overlay" aria-hidden="true">
                 <div className="idf-scan-line" />
@@ -330,14 +333,14 @@ export default function Identify() {
                       fill="currentColor"
                     />
                   </svg>
-                  Identify landmark
+                  {t('identify.identifyBtn')}
                 </button>
                 <button
                   type="button"
                   className="btn btn-ghost"
                   onClick={() => inputRef.current?.click()}
                 >
-                  Choose a different photo
+                  {t('identify.chooseDiffBtn')}
                 </button>
               </div>
             </div>
@@ -345,7 +348,7 @@ export default function Identify() {
 
           {phase === 'scanning' && (
             <div className="idf-stage-body idf-scan-steps" role="status">
-              {SCAN_STEPS.map((step, i) => (
+              {getScanSteps(t).map((step, i) => (
                 <span
                   key={step}
                   className={`idf-scan-step${
@@ -377,7 +380,7 @@ export default function Identify() {
             <div className="idf-stage-body idf-result">
               <div className="idf-result-head">
                 <span className="badge badge-primary idf-result-badge">
-                  ✦ AI identification
+                  {t('identify.aiBadge')}
                 </span>
                 <h2 className="idf-result-name">{result.identified_name}</h2>
               </div>
@@ -392,10 +395,10 @@ export default function Identify() {
                 <Link to={`/explore/${matched.id}`} className="idf-match">
                   <AttractionImage attraction={matched} className="idf-match-img" />
                   <span className="idf-match-body">
-                    <span className="idf-match-kicker">In the catalogue</span>
+                    <span className="idf-match-kicker">{t('identify.catalogueBadge')}</span>
                     <span className="idf-match-name">{matched.name}</span>
                     <span className="idf-match-meta">
-                      {matched.category} · tap for details, map & weather
+                      {matched.category} · {t('identify.tapForDetails')}
                     </span>
                   </span>
                   <svg
@@ -419,7 +422,7 @@ export default function Identify() {
 
               <div className="idf-actions">
                 <button type="button" className="btn btn-secondary" onClick={reset}>
-                  Identify another photo
+                  {t('identify.identifyAnotherBtn')}
                 </button>
               </div>
             </div>
@@ -427,19 +430,19 @@ export default function Identify() {
         </div>
       )}
 
-      <section className="idf-history" aria-label="Your previous identifications">
-        <h2 className="idf-history-title">Previous identifications</h2>
+      <section className="idf-history" aria-label={t('identify.historyTitle')}>
+        <h2 className="idf-history-title">{t('identify.historyTitle')}</h2>
         {historyLoading ? (
           <div className="idf-history-state">
             <div className="spinner" />
           </div>
         ) : historyError ? (
           <div className="alert alert-error">
-            We couldn't load your previous uploads. Refresh the page to try again.
+            {t('identify.historyError')}
           </div>
         ) : history.length === 0 ? (
           <p className="idf-history-empty">
-            Photos you identify will show up here, so you can find them again later.
+            {t('identify.historyEmpty')}
           </p>
         ) : (
           <div className="idf-history-list">

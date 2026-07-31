@@ -8,6 +8,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import PageContainer from '../components/layout/PageContainer'
 import AttractionCard from '../components/explore/AttractionCard'
 import StarRating from '../components/explore/StarRating'
@@ -82,6 +83,7 @@ function CheckIcon() {
 // The page's focal point: who this account belongs to, plus at-a-glance stats.
 // reviewCount is null while the feedback request is still in flight.
 function ProfileIdentity({ user, reviewCount, savedCount }) {
+  const { t } = useTranslation()
   const interestCount = Array.isArray(user.preferences?.interests)
     ? user.preferences.interests.length
     : 0
@@ -94,27 +96,27 @@ function ProfileIdentity({ user, reviewCount, savedCount }) {
           {initials(user.name)}
         </div>
         <div className="profile-identity-info">
-          <h2 className="profile-identity-name">{user.name || 'Traveller'}</h2>
+          <h2 className="profile-identity-name">{user.name || t('profile.travellerFallback')}</h2>
           <p className="profile-identity-email">{user.email}</p>
           {memberSince && (
-            <p className="profile-identity-since">Member since {memberSince}</p>
+            <p className="profile-identity-since">{t('profile.memberSince')} {memberSince}</p>
           )}
         </div>
       </div>
 
       <dl className="profile-stats">
         <div className="profile-stat">
-          <dt className="profile-stat-label">Interests</dt>
+          <dt className="profile-stat-label">{t('profile.interestsStat')}</dt>
           <dd className="profile-stat-value">{interestCount}</dd>
         </div>
         <div className="profile-stat">
-          <dt className="profile-stat-label">Reviews</dt>
+          <dt className="profile-stat-label">{t('profile.reviewsStat')}</dt>
           <dd className="profile-stat-value">
             {reviewCount == null ? '—' : reviewCount}
           </dd>
         </div>
         <div className="profile-stat">
-          <dt className="profile-stat-label">Saved</dt>
+          <dt className="profile-stat-label">{t('profile.savedStat')}</dt>
           <dd className="profile-stat-value">{savedCount}</dd>
         </div>
       </dl>
@@ -125,6 +127,7 @@ function ProfileIdentity({ user, reviewCount, savedCount }) {
 // ---- Preferences form -------------------------------------------------------
 
 function PreferencesForm({ user, onSaved }) {
+  const { t } = useTranslation()
   const initial = useMemo(() => {
     const prefs = user.preferences || {}
     return {
@@ -181,7 +184,7 @@ function PreferencesForm({ user, onSaved }) {
     event.preventDefault()
     const trimmed = name.trim()
     if (!trimmed) {
-      setError('Please enter your name.')
+      setError(t('profile.nameError'))
       return
     }
     setSaving(true)
@@ -200,7 +203,7 @@ function PreferencesForm({ user, onSaved }) {
     } catch (err) {
       setError(
         err?.response?.data?.error ||
-          'Could not save your profile. Please try again.'
+          t('profile.saveError')
       )
     } finally {
       setSaving(false)
@@ -210,15 +213,15 @@ function PreferencesForm({ user, onSaved }) {
   return (
     <form className="card card-pad profile-card" onSubmit={handleSubmit}>
       <div className="profile-card-head">
-        <h2 className="profile-section-title">Profile &amp; travel preferences</h2>
+        <h2 className="profile-section-title">{t('profile.preferencesTitle')}</h2>
         <p className="profile-section-hint">
-          Tell us what you love — we use this to tailor your recommendations.
+          {t('profile.preferencesHint')}
         </p>
       </div>
 
       <div className="field">
         <label className="label" htmlFor="profile-name">
-          Name
+          {t('profile.nameLabel')}
         </label>
         <input
           id="profile-name"
@@ -230,13 +233,13 @@ function PreferencesForm({ user, onSaved }) {
             setName(e.target.value)
             touch()
           }}
-          placeholder="Your name"
+          placeholder={t('profile.namePlaceholder')}
         />
       </div>
 
       <div className="field">
         <label className="label" htmlFor="profile-email">
-          Email
+          {t('profile.emailLabel')}
         </label>
         <input
           id="profile-email"
@@ -246,15 +249,15 @@ function PreferencesForm({ user, onSaved }) {
           disabled
           readOnly
         />
-        <p className="hint">Managed by your sign-in — it can't be changed here.</p>
+        <p className="hint">{t('profile.emailHint')}</p>
       </div>
 
       <fieldset className="field profile-fieldset">
-        <legend className="label">Travel interests</legend>
+        <legend className="label">{t('profile.interestsLegend')}</legend>
         <p className="hint profile-fieldset-hint">
-          Pick as many as you like.
+          {t('profile.interestsHint')}
         </p>
-        <div className="pref-chips" role="group" aria-label="Travel interests">
+        <div className="pref-chips" role="group" aria-label={t('profile.interestsLegend')}>
           {INTERESTS.map((interest) => {
             const selected = interests.includes(interest)
             const scene = categoryScene(interest)
@@ -286,11 +289,11 @@ function PreferencesForm({ user, onSaved }) {
       </fieldset>
 
       <fieldset className="field profile-fieldset">
-        <legend className="label">Budget</legend>
+        <legend className="label">{t('profile.budgetLegend')}</legend>
         <p className="hint profile-fieldset-hint">
-          Tap a selected option again to clear it.
+          {t('profile.budgetHint')}
         </p>
-        <div className="pref-seg" role="group" aria-label="Budget">
+        <div className="pref-seg" role="group" aria-label={t('profile.budgetLegend')}>
           {BUDGET_OPTIONS.map((opt) => {
             const selected = budget === opt.value
             return (
@@ -315,8 +318,8 @@ function PreferencesForm({ user, onSaved }) {
       </fieldset>
 
       <fieldset className="field profile-fieldset">
-        <legend className="label">Trip pace</legend>
-        <div className="pref-cards" role="group" aria-label="Trip pace">
+        <legend className="label">{t('profile.paceLegend')}</legend>
+        <div className="pref-cards" role="group" aria-label={t('profile.paceLegend')}>
           {PACE_OPTIONS.map((opt) => {
             const selected = pace === opt.value
             const [title, description] = opt.label.split(' — ')
@@ -346,7 +349,7 @@ function PreferencesForm({ user, onSaved }) {
 
       {error && <div className="alert alert-error">{error}</div>}
       {saved && !error && (
-        <div className="alert alert-success">Your profile has been saved.</div>
+        <div className="alert alert-success">{t('profile.savedSuccess')}</div>
       )}
 
       <div className="profile-save-row">
@@ -355,10 +358,10 @@ function PreferencesForm({ user, onSaved }) {
           className="btn btn-primary"
           disabled={saving || !dirty}
         >
-          {saving ? 'Saving…' : saved && !dirty ? 'Saved' : 'Save changes'}
+          {saving ? t('profile.savingBtn') : saved && !dirty ? t('profile.savedBtn') : t('profile.saveChangesBtn')}
         </button>
         {dirty && !saving && (
-          <span className="profile-save-note">You have unsaved changes.</span>
+          <span className="profile-save-note">{t('profile.unsavedChanges')}</span>
         )}
       </div>
     </form>
@@ -370,18 +373,19 @@ function PreferencesForm({ user, onSaved }) {
 // Reviews are fetched once at the page level (they also feed the identity
 // stat) and handed down here. `reviews === null` means still loading.
 function ReviewHistory({ reviews, error }) {
+  const { t } = useTranslation()
   return (
     <section className="card card-pad profile-card">
-      <h2 className="profile-section-title">Your reviews</h2>
+      <h2 className="profile-section-title">{t('profile.yourReviews')}</h2>
 
       {error ? (
-        <p className="profile-empty">Couldn't load your reviews right now.</p>
+        <p className="profile-empty">{t('profile.reviewsLoadError')}</p>
       ) : reviews === null ? (
-        <p className="profile-empty">Loading your reviews…</p>
+        <p className="profile-empty">{t('profile.reviewsLoading')}</p>
       ) : reviews.length === 0 ? (
         <p className="profile-empty">
-          You haven't reviewed anywhere yet.{' '}
-          <Link to="/explore">Explore attractions</Link> and share your rating.
+          {t('profile.noReviews')}{' '}
+          <Link to="/explore">{t('profile.exploreAttractionsLink')}</Link> {t('profile.shareRatingText')}
         </p>
       ) : (
         <ul className="profile-review-list" role="list">
@@ -415,6 +419,7 @@ function ReviewHistory({ reviews, error }) {
 // ---- Liked places -----------------------------------------------------------
 
 function LikedPlaces({ liked, toggleLike }) {
+  const { t } = useTranslation()
   const [catalogue, setCatalogue] = useState(null) // id -> attraction
   const [error, setError] = useState(false)
 
@@ -440,16 +445,16 @@ function LikedPlaces({ liked, toggleLike }) {
 
   return (
     <section className="card card-pad profile-card">
-      <h2 className="profile-section-title">Liked places</h2>
+      <h2 className="profile-section-title">{t('profile.likedPlacesTitle')}</h2>
 
       {error ? (
-        <p className="profile-empty">Couldn't load your liked places right now.</p>
+        <p className="profile-empty">{t('profile.likedLoadError')}</p>
       ) : catalogue === null ? (
-        <p className="profile-empty">Loading your liked places…</p>
+        <p className="profile-empty">{t('profile.likedLoading')}</p>
       ) : likedAttractions.length === 0 ? (
         <p className="profile-empty">
-          No favourites yet — tap the heart on any place in{' '}
-          <Link to="/explore">Explore</Link> to save it here.
+          {t('profile.noLiked1')}{' '}
+          <Link to="/explore">{t('profile.exploreLink')}</Link> {t('profile.noLiked2')}
         </p>
       ) : (
         <div className="attraction-grid profile-liked-grid">
@@ -471,6 +476,7 @@ function LikedPlaces({ liked, toggleLike }) {
 // ---- Page -------------------------------------------------------------------
 
 export default function Profile() {
+  const { t } = useTranslation()
   const { user, firebaseUser, logout, setUser } = useAuth()
   const { liked, toggleLike } = useLikes()
 
@@ -494,21 +500,21 @@ export default function Profile() {
 
   return (
     <PageContainer
-      title="Your profile"
-      subtitle="Manage your account and tailor your recommendations."
+      title={t('profile.pageTitle')}
+      subtitle={t('profile.pageSubtitle')}
       actions={
         <button type="button" className="btn btn-secondary" onClick={logout}>
-          Log out
+          {t('profile.logoutBtn')}
         </button>
       }
     >
       {!user ? (
         <div className="card card-pad profile-card">
           <p className="profile-empty">
-            Loading your profile…
+            {t('profile.loadingProfile')}
             {firebaseUser?.email && (
               <>
-                {' '}Signed in as {firebaseUser.email}.
+                {' '}{t('profile.signedInAs')} {firebaseUser.email}.
               </>
             )}
           </p>
