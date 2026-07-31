@@ -19,5 +19,38 @@
     "askTourMate": "Ask TourMate",
     "account": "Account",
     "madeFor": "Made for travelers in Sri Lanka"
+  },
+  "landing": {
+    "openApp": "Open the app",
+    "login": "Log in",
+    "getStarted": "Get started",
+    "heroKicker": "Your AI travel companion · Sri Lanka",
+    "heroHeadline": "Sri Lanka, tuned to you.",
+    "heroSubhead": "One companion that reads the weather, knows where you're standing, and plans like it grew up here — recommendations, answers, and landmark recognition for the whole island.",
+    "searchPlaceholder": "Where to? Sigiriya, Ella, Mirissa…",
+    "exploreBtn": "Explore",
+    "wondersEyebrow": "Where the island takes you",
+    "wondersHeadline": "Eight wonders to start with",
+    "featuresEyebrow": "What makes it a companion",
+    "featuresHeadline": "Three ways the AI carries your trip",
+    "ctaHeadline": "Ready when you are.",
+    "ctaSubhead": "Free for travelers. Set your interests once — the island does the rest.",
+    "createAccountBtn": "Create your free account",
+    "copyright": "© {{year}} TourMateAI · A CIS6035 project",
+    "wonders": {
+      "sigiriya": { "name": "Sigiriya", "region": "Cultural Triangle" },
+      "nineArch": { "name": "Nine Arch Bridge", "region": "Ella" },
+      "templeOfTooth": { "name": "Temple of the Tooth", "region": "Kandy" },
+      "coconutTreeHill": { "name": "Coconut Tree Hill", "region": "Mirissa" },
+      "leopard": { "name": "Yala National Park", "region": "Southern Province" },
+      "galleFort": { "name": "Galle Fort", "region": "South Coast" },
+      "adamsPeak": { "name": "Adam's Peak", "region": "Hill Country" },
+      "dambulla": { "name": "Dambulla Cave Temple", "region": "Cultural Triangle" }
+    },
+    "features": {
+      "f1": { "title": "Picks that fit the day", "copy": "Recommendations weigh your interests against where you are, the weather overhead, and the hour — so a rainy Kandy afternoon suggests the museum, not the summit." },
+      "f2": { "title": "Answers like a local", "copy": "Ask anything — festival dates, dress codes, the best train seats — and get answers grounded in a Sri Lanka knowledge base, with sources you can check." },
+      "f3": { "title": "Point, shoot, identify", "copy": "Photograph a temple, bridge, or ruin you can’t name and the vision model identifies it, tells its story, and lines up what to see nearby." }
+    }
   }
 }

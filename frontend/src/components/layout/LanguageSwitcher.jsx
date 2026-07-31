@@ -1,7 +1,7 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-export default function LanguageSwitcher() {
+export default function LanguageSwitcher({ className = 'btn-ghost' }) {
   const { i18n } = useTranslation()
 
   const toggleLanguage = () => {
@@ -12,7 +12,7 @@ export default function LanguageSwitcher() {
   return (
     <button
       type="button"
-      className="btn btn-ghost"
+      className={`btn ${className}`}
       style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
       onClick={toggleLanguage}
       aria-label="Toggle language"
