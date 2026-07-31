@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import AttractionImage from './AttractionImage'
 
 // We will reuse AttractionImage and just pass a dummy structure or the image_url directly
@@ -13,6 +14,8 @@ function HotelImage({ hotel, className }) {
 }
 
 export default function HotelCard({ hotel, index = 0 }) {
+  const { t } = useTranslation()
+
   return (
     <Link
       to={`/explore/hotel/${hotel.id}`}
@@ -22,7 +25,7 @@ export default function HotelCard({ hotel, index = 0 }) {
       <div className="attraction-card-media">
         <HotelImage hotel={hotel} className="attraction-card-img" />
         <span className="media-badge" style={{ textTransform: 'capitalize' }}>
-          {hotel.budget_tier || 'Hotel'}
+          {hotel.budget_tier || t('explore.hotelBadgeDefault')}
         </span>
       </div>
 
@@ -33,7 +36,7 @@ export default function HotelCard({ hotel, index = 0 }) {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8-6.1-3.5-6.1 3.5 1.4-6.8L2.2 9.1l6.9-.8L12 2z" />
             </svg>
-            {hotel.avg_rating ? hotel.avg_rating.toFixed(1) : 'New'}
+            {hotel.avg_rating ? hotel.avg_rating.toFixed(1) : t('explore.newRating')}
           </span>
         </div>
         <p className="attraction-card-desc" style={{ marginBottom: '4px', fontWeight: 'bold' }}>

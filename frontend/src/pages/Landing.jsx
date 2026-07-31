@@ -4,27 +4,29 @@
 // photography comes from the bundled scenes in assets/photos.js.
 
 import { Link, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import Logo from '../components/layout/Logo'
+import LanguageSwitcher from '../components/layout/LanguageSwitcher'
 import { useAuth } from '../context/AuthContext'
 import { scenes } from '../assets/photos'
 import '../styles/landing.css'
 
-const WONDERS = [
-  { scene: scenes.sigiriyaGround, name: 'Sigiriya', region: 'Cultural Triangle' },
-  { scene: scenes.nineArch, name: 'Nine Arch Bridge', region: 'Ella' },
-  { scene: scenes.templeOfTooth, name: 'Temple of the Tooth', region: 'Kandy' },
-  { scene: scenes.coconutTreeHill, name: 'Coconut Tree Hill', region: 'Mirissa' },
-  { scene: scenes.leopard, name: 'Yala National Park', region: 'Southern Province' },
-  { scene: scenes.galleFort, name: 'Galle Fort', region: 'South Coast' },
-  { scene: scenes.adamsPeak, name: "Adam's Peak", region: 'Hill Country' },
-  { scene: scenes.dambulla, name: 'Dambulla Cave Temple', region: 'Cultural Triangle' },
+const getWonders = (t) => [
+  { scene: scenes.sigiriyaGround, name: t('landing.wonders.sigiriya.name'), region: t('landing.wonders.sigiriya.region') },
+  { scene: scenes.nineArch, name: t('landing.wonders.nineArch.name'), region: t('landing.wonders.nineArch.region') },
+  { scene: scenes.templeOfTooth, name: t('landing.wonders.templeOfTooth.name'), region: t('landing.wonders.templeOfTooth.region') },
+  { scene: scenes.coconutTreeHill, name: t('landing.wonders.coconutTreeHill.name'), region: t('landing.wonders.coconutTreeHill.region') },
+  { scene: scenes.leopard, name: t('landing.wonders.leopard.name'), region: t('landing.wonders.leopard.region') },
+  { scene: scenes.galleFort, name: t('landing.wonders.galleFort.name'), region: t('landing.wonders.galleFort.region') },
+  { scene: scenes.adamsPeak, name: t('landing.wonders.adamsPeak.name'), region: t('landing.wonders.adamsPeak.region') },
+  { scene: scenes.dambulla, name: t('landing.wonders.dambulla.name'), region: t('landing.wonders.dambulla.region') },
 ]
 
-const FEATURES = [
+const getFeatures = (t) => [
   {
     scene: scenes.adamsPeak,
-    title: 'Picks that fit the day',
-    copy: 'Recommendations weigh your interests against where you are, the weather overhead, and the hour — so a rainy Kandy afternoon suggests the museum, not the summit.',
+    title: t('landing.features.f1.title'),
+    copy: t('landing.features.f1.copy'),
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path
@@ -39,8 +41,8 @@ const FEATURES = [
   },
   {
     scene: scenes.templeOfTooth,
-    title: 'Answers like a local',
-    copy: 'Ask anything — festival dates, dress codes, the best train seats — and get answers grounded in a Sri Lanka knowledge base, with sources you can check.',
+    title: t('landing.features.f2.title'),
+    copy: t('landing.features.f2.copy'),
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path
@@ -57,8 +59,8 @@ const FEATURES = [
   },
   {
     scene: scenes.dambulla,
-    title: 'Point, shoot, identify',
-    copy: 'Photograph a temple, bridge, or ruin you can’t name and the vision model identifies it, tells its story, and lines up what to see nearby.',
+    title: t('landing.features.f3.title'),
+    copy: t('landing.features.f3.copy'),
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path
@@ -85,23 +87,28 @@ function SearchIcon() {
 export default function Landing() {
   const { isAuthenticated } = useAuth()
   const { state } = useLocation() // preserve a remembered destination through login
+  const { t } = useTranslation()
+
+  const wonders = getWonders(t)
+  const features = getFeatures(t)
 
   return (
     <div className="landing">
       <header className="landing-nav">
         <Logo variant="bw" />
         <nav className="landing-nav-actions" aria-label="Account">
+          <LanguageSwitcher className="btn-frost" />
           {isAuthenticated ? (
             <Link to="/" className="btn btn-white">
-              Open the app
+              {t('landing.openApp')}
             </Link>
           ) : (
             <>
               <Link to="/login" state={state} className="btn btn-frost">
-                Log in
+                {t('landing.login')}
               </Link>
               <Link to="/signup" state={state} className="btn btn-white">
-                Get started
+                {t('landing.getStarted')}
               </Link>
             </>
           )}
@@ -118,12 +125,10 @@ export default function Landing() {
         <div className="landing-hero-scrim" aria-hidden="true" />
 
         <div className="landing-hero-content">
-          <span className="landing-kicker">Your AI travel companion · Sri Lanka</span>
-          <h1 className="landing-headline">Sri Lanka, tuned to you.</h1>
+          <span className="landing-kicker">{t('landing.heroKicker')}</span>
+          <h1 className="landing-headline">{t('landing.heroHeadline')}</h1>
           <p className="landing-subhead">
-            One companion that reads the weather, knows where you're standing,
-            and plans like it grew up here — recommendations, answers, and
-            landmark recognition for the whole island.
+            {t('landing.heroSubhead')}
           </p>
 
           <Link
@@ -136,9 +141,9 @@ export default function Landing() {
               <SearchIcon />
             </span>
             <span className="landing-search-text">
-              Where to? Sigiriya, Ella, Mirissa…
+              {t('landing.searchPlaceholder')}
             </span>
-            <span className="btn btn-primary landing-search-btn">Explore</span>
+            <span className="btn btn-primary landing-search-btn">{t('landing.exploreBtn')}</span>
           </Link>
         </div>
       </section>
@@ -146,15 +151,15 @@ export default function Landing() {
       <section className="landing-section" aria-labelledby="wonders-title">
         <div className="landing-section-head">
           <div>
-            <span className="landing-eyebrow">Where the island takes you</span>
+            <span className="landing-eyebrow">{t('landing.wondersEyebrow')}</span>
             <h2 id="wonders-title" className="landing-h2">
-              Eight wonders to start with
+              {t('landing.wondersHeadline')}
             </h2>
           </div>
         </div>
 
         <div className="wonder-row">
-          {WONDERS.map(({ scene, name, region }) => (
+          {wonders.map(({ scene, name, region }) => (
             <Link
               key={name}
               to={isAuthenticated ? '/explore' : '/signup'}
@@ -179,15 +184,15 @@ export default function Landing() {
       <section className="landing-section" aria-labelledby="features-title">
         <div className="landing-section-head">
           <div>
-            <span className="landing-eyebrow">What makes it a companion</span>
+            <span className="landing-eyebrow">{t('landing.featuresEyebrow')}</span>
             <h2 id="features-title" className="landing-h2">
-              Three ways the AI carries your trip
+              {t('landing.featuresHeadline')}
             </h2>
           </div>
         </div>
 
         <div className="feature-grid">
-          {FEATURES.map(({ scene, title, copy, icon }) => (
+          {features.map(({ scene, title, copy, icon }) => (
             <article key={title} className="feature-card">
               <div className="feature-photo">
                 <img
@@ -216,20 +221,20 @@ export default function Landing() {
         />
         <div className="landing-cta-scrim" aria-hidden="true" />
         <div className="landing-cta-content">
-          <h2>Ready when you are.</h2>
-          <p>Free for travelers. Set your interests once — the island does the rest.</p>
+          <h2>{t('landing.ctaHeadline')}</h2>
+          <p>{t('landing.ctaSubhead')}</p>
           <div className="landing-cta-actions">
             {isAuthenticated ? (
               <Link to="/" className="btn btn-white btn-lg">
-                Open the app
+                {t('landing.openApp')}
               </Link>
             ) : (
               <>
                 <Link to="/signup" className="btn btn-white btn-lg">
-                  Create your free account
+                  {t('landing.createAccountBtn')}
                 </Link>
                 <Link to="/login" className="btn btn-frost btn-lg">
-                  Log in
+                  {t('landing.login')}
                 </Link>
               </>
             )}
@@ -239,7 +244,7 @@ export default function Landing() {
 
       <footer className="landing-footer">
         <Logo variant="bw" />
-        <span>© {new Date().getFullYear()} TourMateAI · A CIS6035 project</span>
+        <span>{t('landing.copyright', { year: new Date().getFullYear() })}</span>
       </footer>
     </div>
   )

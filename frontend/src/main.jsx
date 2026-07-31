@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import App from './App'
+import './i18n'
 
 // Global design system: tokens first (variables), then base element styles.
 import './styles/tokens.css'

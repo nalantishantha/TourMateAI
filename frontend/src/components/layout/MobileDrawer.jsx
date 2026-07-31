@@ -3,6 +3,7 @@
 
 import { useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../context/AuthContext'
 import useNavItems from '../../hooks/useNavItems'
 import Logo from './Logo'
@@ -10,6 +11,7 @@ import Logo from './Logo'
 export default function MobileDrawer({ open, onClose }) {
   const navItems = useNavItems()
   const { user, firebaseUser, logout } = useAuth()
+  const { t } = useTranslation()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -80,17 +82,17 @@ export default function MobileDrawer({ open, onClose }) {
         <div className="drawer-footer">
           <div className="drawer-user">
             <span className="drawer-user-name">
-              {user?.name || firebaseUser?.email?.split('@')[0] || 'Traveler'}
+              {user?.name || firebaseUser?.email?.split('@')[0] || t('user.traveler')}
             </span>
             <span className="drawer-user-email">
               {user?.email || firebaseUser?.email || ''}
             </span>
           </div>
           <NavLink to="/profile" onClick={onClose} className="drawer-link">
-            Profile
+            {t('user.profile')}
           </NavLink>
           <button type="button" className="drawer-link drawer-logout" onClick={handleLogout}>
-            Log out
+            {t('user.logout')}
           </button>
         </div>
       </aside>

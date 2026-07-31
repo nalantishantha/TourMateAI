@@ -6,6 +6,7 @@
 // derived once from the first unfiltered load so they cover whatever is seeded.
 
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import PageContainer from '../components/layout/PageContainer'
 import AttractionCard, { AttractionCardSkeleton } from '../components/explore/AttractionCard'
 import HotelCard, { HotelCardSkeleton } from '../components/explore/HotelCard'
@@ -29,6 +30,7 @@ function SearchIcon() {
 }
 
 export default function Explore() {
+  const { t } = useTranslation()
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('') // debounced value actually sent to the API
   const [category, setCategory] = useState('')
@@ -85,7 +87,7 @@ export default function Explore() {
         }
       })
       .catch(() => {
-        if (!cancelled) setError('Could not load attractions. Please try again.')
+        if (!cancelled) setError(t('explore.errorPlacesDesc'))
       })
       .finally(() => {
         if (!cancelled) {
@@ -118,7 +120,7 @@ export default function Explore() {
         })
       })
       .catch(() => {
-        if (!cancelled) setHotelError('Could not load hotels.')
+        if (!cancelled) setHotelError(t('explore.errorHotelsDesc'))
       })
       .finally(() => {
         if (!cancelled) {
@@ -164,11 +166,10 @@ export default function Explore() {
           aria-hidden="true"
         />
         <div className="explore-hero-scrim" aria-hidden="true" />
-        <span className="explore-hero-kicker">Discover Sri Lanka</span>
-        <h1 className="explore-hero-title">Where will the island take you?</h1>
+        <span className="explore-hero-kicker">{t('explore.heroKicker')}</span>
+        <h1 className="explore-hero-title">{t('explore.heroTitle')}</h1>
         <p className="explore-hero-sub">
-          Ancient fortresses, misty tea country, leopard trails, and quiet
-          crescent bays — search them all, or browse by mood.
+          {t('explore.heroSub')}
         </p>
 
         <div className="explore-search">
@@ -179,8 +180,8 @@ export default function Explore() {
             type="search"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Search attractions — try “temple” or “beach”…"
-            aria-label="Search attractions"
+            placeholder={t('explore.searchPlaceholder')}
+            aria-label={t('explore.searchPlaceholder')}
           />
           {searchInput && (
             <button
@@ -200,7 +201,7 @@ export default function Explore() {
             className={`chip${category === '' ? ' chip-active' : ''}`}
             onClick={() => pickCategory('')}
           >
-            All
+            {t('explore.allCategories')}
           </button>
           {categories.map((c) => {
             const thumb = categoryScene(c)
@@ -228,19 +229,19 @@ export default function Explore() {
       </section>
 
       <div className="explore-toolbar" aria-live="polite" style={{ marginTop: '2rem', marginBottom: '1rem' }}>
-        <h2>Visiting Places</h2>
+        <h2>{t('explore.placesTitle')}</h2>
         {!showSkeletons && !error && pagination && (
           <p className="explore-count">
-            Showing <strong>{attractions.length}</strong> of{' '}
-            <strong>{pagination.total}</strong> places
+            {t('explore.showing')} <strong>{attractions.length}</strong> {t('explore.of')}{' '}
+            <strong>{pagination.total}</strong> {t('explore.places')}
             {category && (
               <>
-                {' '}in <strong>{category}</strong>
+                {' '}{t('explore.in')} <strong>{category}</strong>
               </>
             )}
             {search && (
               <>
-                {' '}matching “<strong>{search}</strong>”
+                {' '}{t('explore.matching')} “<strong>{search}</strong>”
               </>
             )}
           </p>
@@ -252,7 +253,7 @@ export default function Explore() {
           <span className="explore-empty-icon" aria-hidden="true">
             ⚠️
           </span>
-          <h3>Something went wrong</h3>
+          <h3>{t('explore.errorTitle')}</h3>
           <p>{error}</p>
           <button
             type="button"
@@ -262,7 +263,7 @@ export default function Explore() {
               setReloadKey((k) => k + 1)
             }}
           >
-            Try again
+            {t('explore.tryAgainBtn')}
           </button>
         </div>
       ) : showSkeletons ? (
@@ -276,16 +277,16 @@ export default function Explore() {
           <span className="explore-empty-icon" aria-hidden="true">
             🧭
           </span>
-          <h3>No places match that</h3>
+          <h3>{t('explore.emptyPlacesTitle')}</h3>
           <p>
-            We couldn't find any attractions
-            {search && <> for “{search}”</>}
-            {category && <> in {category}</>}. Try a different word or browse
-            everything.
+            {t('explore.emptyPlacesDesc')}
+            {search && <> {t('explore.for')} “{search}”</>}
+            {category && <> {t('explore.in')} {category}</>}
+            {t('explore.emptyPlacesRetry')}
           </p>
           {hasFilters && (
             <button type="button" className="btn btn-primary" onClick={clearFilters}>
-              Clear filters
+              {t('explore.clearFiltersBtn')}
             </button>
           )}
         </div>
@@ -311,7 +312,7 @@ export default function Explore() {
                 onClick={() => setPage((p) => p + 1)}
                 disabled={loadingMore}
               >
-                {loadingMore ? 'Loading…' : 'Load more places'}
+                {loadingMore ? t('explore.loadingBtn') : t('explore.loadMorePlacesBtn')}
               </button>
             </div>
           )}
@@ -320,14 +321,14 @@ export default function Explore() {
 
       {/* Hotels Section */}
       <div className="explore-toolbar" aria-live="polite" style={{ marginTop: '4rem', marginBottom: '1rem' }}>
-        <h2>Places to Stay</h2>
+        <h2>{t('explore.hotelsTitle')}</h2>
         {!showHotelSkeletons && !hotelError && hotelPagination && (
           <p className="explore-count">
-            Showing <strong>{hotels.length}</strong> of{' '}
-            <strong>{hotelPagination.total}</strong> hotels
+            {t('explore.showing')} <strong>{hotels.length}</strong> {t('explore.of')}{' '}
+            <strong>{hotelPagination.total}</strong> {t('explore.hotels')}
             {search && (
               <>
-                {' '}matching “<strong>{search}</strong>”
+                {' '}{t('explore.matching')} “<strong>{search}</strong>”
               </>
             )}
           </p>
@@ -339,7 +340,7 @@ export default function Explore() {
           <span className="explore-empty-icon" aria-hidden="true">
             ⚠️
           </span>
-          <h3>Something went wrong</h3>
+          <h3>{t('explore.errorTitle')}</h3>
           <p>{hotelError}</p>
           <button
             type="button"
@@ -349,7 +350,7 @@ export default function Explore() {
               setReloadKey((k) => k + 1)
             }}
           >
-            Try again
+            {t('explore.tryAgainBtn')}
           </button>
         </div>
       ) : showHotelSkeletons ? (
@@ -363,14 +364,14 @@ export default function Explore() {
           <span className="explore-empty-icon" aria-hidden="true">
             🛏️
           </span>
-          <h3>No hotels found</h3>
+          <h3>{t('explore.emptyHotelsTitle')}</h3>
           <p>
-            We couldn't find any accommodations
-            {search && <> for “{search}”</>}.
+            {t('explore.emptyHotelsDesc')}
+            {search && <> {t('explore.for')} “{search}”</>}.
           </p>
           {hasFilters && (
             <button type="button" className="btn btn-primary" onClick={clearFilters}>
-              Clear filters
+              {t('explore.clearFiltersBtn')}
             </button>
           )}
         </div>
@@ -394,7 +395,7 @@ export default function Explore() {
                 onClick={() => setHotelPage((p) => p + 1)}
                 disabled={loadingMoreHotels}
               >
-                {loadingMoreHotels ? 'Loading…' : 'Load more hotels'}
+                {loadingMoreHotels ? t('explore.loadingBtn') : t('explore.loadMoreHotelsBtn')}
               </button>
             </div>
           )}

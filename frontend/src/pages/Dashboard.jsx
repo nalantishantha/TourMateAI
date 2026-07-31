@@ -21,6 +21,8 @@ import '../styles/pages.css'
 import '../styles/explore.css'
 import '../styles/dashboard.css'
 
+import { useTranslation } from 'react-i18next'
+
 const SECTION_SIZE = 4
 
 // The hero photo follows the clock — the app's whole pitch is context-aware.
@@ -31,17 +33,17 @@ function heroSceneForHour(hour) {
   return scenes.galleLighthouse
 }
 
-function greetingForHour(hour) {
-  if (hour >= 5 && hour < 12) return 'Good morning'
-  if (hour >= 12 && hour < 17) return 'Good afternoon'
-  return 'Good evening'
+function greetingForHour(hour, t) {
+  if (hour >= 5 && hour < 12) return t('dashboard.greetings.morning')
+  if (hour >= 12 && hour < 17) return t('dashboard.greetings.afternoon')
+  return t('dashboard.greetings.evening')
 }
 
-const QUICK_ACTIONS = [
+const getQuickActions = (t) => [
   {
     to: '/itineraries',
-    title: 'Plan a trip',
-    sub: 'Build a day-by-day itinerary',
+    title: t('dashboard.quickActions.planTitle'),
+    sub: t('dashboard.quickActions.planSub'),
     accent: 'qa-plan',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -53,8 +55,8 @@ const QUICK_ACTIONS = [
   },
   {
     to: '/chat',
-    title: 'Ask the assistant',
-    sub: 'Travel answers, grounded in local knowledge',
+    title: t('dashboard.quickActions.askTitle'),
+    sub: t('dashboard.quickActions.askSub'),
     accent: 'qa-chat',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -68,8 +70,8 @@ const QUICK_ACTIONS = [
   },
   {
     to: '/identify',
-    title: 'Identify a landmark',
-    sub: 'Upload a photo, get the story',
+    title: t('dashboard.quickActions.identifyTitle'),
+    sub: t('dashboard.quickActions.identifySub'),
     accent: 'qa-identify',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -140,8 +142,8 @@ function SectionError({ children }) {
   return <p className="dash-section-error">⚠️ {children}</p>
 }
 
-function formatDates(itinerary) {
-  if (!itinerary.start_date) return 'Dates not set yet'
+function formatDates(itinerary, t) {
+  if (!itinerary.start_date) return t('dashboard.itineraries.datesNotSet')
   const opts = { day: 'numeric', month: 'short' }
   const start = new Date(itinerary.start_date).toLocaleDateString(undefined, opts)
   if (!itinerary.end_date) return start
@@ -151,7 +153,8 @@ function formatDates(itinerary) {
 
 export default function Dashboard() {
   const { user, firebaseUser } = useAuth()
-  const name = user?.name || firebaseUser?.email?.split('@')[0] || 'traveler'
+  const { t } = useTranslation()
+  const name = user?.name || firebaseUser?.email?.split('@')[0] || t('user.traveler')
   const hasInterests = (user?.preferences?.interests || []).length > 0
 
   const hour = new Date().getHours()
@@ -202,16 +205,16 @@ export default function Dashboard() {
         <div className="dash-hero-content">
           <span className="dash-hero-date">{today}</span>
           <h1 className="dash-greeting">
-            {greetingForHour(hour)}, <span className="dash-name">{name}</span>.
+            {greetingForHour(hour, t)}, <span className="dash-name">{name}</span>.
           </h1>
           <p className="dash-lead">
-            Here's what the island has lined up for you today.
+            {t('dashboard.heroLead')}
           </p>
         </div>
       </section>
 
       <section className="qa-row" aria-label="Quick actions">
-        {QUICK_ACTIONS.map((qa) => (
+        {getQuickActions(t).map((qa) => (
           <Link key={qa.to} to={qa.to} className={`card card-hover qa-card ${qa.accent}`}>
             <span className="qa-icon">{qa.icon}</span>
             <span className="qa-text">
@@ -226,22 +229,22 @@ export default function Dashboard() {
       </section>
 
       <DashSection
-        title="Recommended for you"
+        title={t('dashboard.recommendations.title')}
         hint={
           hasInterests
-            ? 'Picked from your travel interests.'
-            : 'Popular picks — set your interests for tailored ones.'
+            ? t('dashboard.recommendations.hintPersonalized')
+            : t('dashboard.recommendations.hintGeneric')
         }
         linkTo="/profile"
-        linkLabel="Tune your interests"
+        linkLabel={t('dashboard.recommendations.link')}
       >
         {recommended === null ? (
           <RecSkeleton />
         ) : recommended === 'error' ? (
-          <SectionError>Couldn't load recommendations right now.</SectionError>
+          <SectionError>{t('dashboard.recommendations.error')}</SectionError>
         ) : recommended.length === 0 ? (
           <p className="dash-section-error">
-            Nothing to recommend yet — the catalogue may still be empty.
+            {t('dashboard.recommendations.empty')}
           </p>
         ) : (
           <div className="rec-editorial">
@@ -285,26 +288,26 @@ export default function Dashboard() {
       </DashSection>
 
       <DashSection
-        title="Continue planning"
-        hint="Pick up a trip where you left off."
+        title={t('dashboard.itineraries.title')}
+        hint={t('dashboard.itineraries.hint')}
         linkTo={itineraries?.length ? '/itineraries' : undefined}
-        linkLabel="All itineraries"
+        linkLabel={t('dashboard.itineraries.link')}
       >
         {itineraries === null ? (
           <div className="itinerary-row-list" aria-busy="true">
             <div className="card itinerary-row skeleton" style={{ height: '4.5rem' }} />
           </div>
         ) : itineraries === 'error' ? (
-          <SectionError>Couldn't load your itineraries right now.</SectionError>
+          <SectionError>{t('dashboard.itineraries.error')}</SectionError>
         ) : itineraries.length === 0 ? (
           <div className="card dash-empty">
             <span className="dash-empty-icon" aria-hidden="true">🧳</span>
             <div className="dash-empty-text">
-              <h3>No trips in the works</h3>
-              <p>Start an itinerary and your plans will show up here.</p>
+              <h3>{t('dashboard.itineraries.emptyTitle')}</h3>
+              <p>{t('dashboard.itineraries.emptyDesc')}</p>
             </div>
             <Link to="/itineraries" className="btn btn-primary">
-              Plan a trip
+              {t('dashboard.itineraries.emptyBtn')}
             </Link>
           </div>
         ) : (
@@ -330,8 +333,8 @@ export default function Dashboard() {
                   <span className="itinerary-row-text">
                     <span className="itinerary-row-title">{it.title}</span>
                     <span className="itinerary-row-meta">
-                      {formatDates(it)} · {it.item_count}{' '}
-                      {it.item_count === 1 ? 'place' : 'places'}
+                      {formatDates(it, t)} · {it.item_count}{' '}
+                      {it.item_count === 1 ? t('dashboard.itineraries.place') : t('dashboard.itineraries.places')}
                       {it.preview_stops.length > 0 && (
                         <> · {it.preview_stops.join(' · ')}</>
                       )}
@@ -348,17 +351,17 @@ export default function Dashboard() {
       </DashSection>
 
       <DashSection
-        title="Trending attractions"
-        hint="The island's highest-rated places right now."
+        title={t('dashboard.trending.title')}
+        hint={t('dashboard.trending.hint')}
         linkTo="/explore"
-        linkLabel="Explore all"
+        linkLabel={t('dashboard.trending.link')}
       >
         {trending === null ? (
           <TrendSkeleton />
         ) : trending === 'error' ? (
-          <SectionError>Couldn't load trending attractions right now.</SectionError>
+          <SectionError>{t('dashboard.trending.error')}</SectionError>
         ) : trending.length === 0 ? (
-          <p className="dash-section-error">No attractions in the catalogue yet.</p>
+          <p className="dash-section-error">{t('dashboard.trending.empty')}</p>
         ) : (
           <div className="trend-row">
             {trending.map((attraction, i) => (
@@ -379,7 +382,7 @@ export default function Dashboard() {
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                       <path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8-6.1-3.5-6.1 3.5 1.4-6.8L2.2 9.1l6.9-.8L12 2z" />
                     </svg>
-                    {attraction.avg_rating ? attraction.avg_rating.toFixed(1) : 'New'}
+                    {attraction.avg_rating ? attraction.avg_rating.toFixed(1) : t('dashboard.trending.newRating')}
                     {' · '}
                     {attraction.category}
                   </span>
