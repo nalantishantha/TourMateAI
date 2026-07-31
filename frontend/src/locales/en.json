@@ -43,6 +43,50 @@
     "alreadyHaveAccount": "Already have an account?",
     "loginLink": "Log in"
   },
+  "dashboard": {
+    "greetings": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    },
+    "heroLead": "Here's what the island has lined up for you today.",
+    "quickActions": {
+      "planTitle": "Plan a trip",
+      "planSub": "Build a day-by-day itinerary",
+      "askTitle": "Ask the assistant",
+      "askSub": "Travel answers, grounded in local knowledge",
+      "identifyTitle": "Identify a landmark",
+      "identifySub": "Upload a photo, get the story"
+    },
+    "recommendations": {
+      "title": "Recommended for you",
+      "hintPersonalized": "Picked from your travel interests.",
+      "hintGeneric": "Popular picks — set your interests for tailored ones.",
+      "link": "Tune your interests",
+      "error": "Couldn't load recommendations right now.",
+      "empty": "Nothing to recommend yet — the catalogue may still be empty."
+    },
+    "itineraries": {
+      "title": "Continue planning",
+      "hint": "Pick up a trip where you left off.",
+      "link": "All itineraries",
+      "error": "Couldn't load your itineraries right now.",
+      "emptyTitle": "No trips in the works",
+      "emptyDesc": "Start an itinerary and your plans will show up here.",
+      "emptyBtn": "Plan a trip",
+      "datesNotSet": "Dates not set yet",
+      "place": "place",
+      "places": "places"
+    },
+    "trending": {
+      "title": "Trending attractions",
+      "hint": "The island's highest-rated places right now.",
+      "link": "Explore all",
+      "error": "Couldn't load trending attractions right now.",
+      "empty": "No attractions in the catalogue yet.",
+      "newRating": "New"
+    }
+  },
   "landing": {
     "openApp": "Open the app",
     "login": "Log in",
