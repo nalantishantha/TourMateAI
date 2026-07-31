@@ -6,6 +6,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 
+import { useTranslation } from 'react-i18next'
+
 function initialsOf(user, firebaseUser) {
   const name = user?.name || firebaseUser?.email?.split('@')[0] || '?'
   const parts = name.trim().split(/\s+/)
@@ -16,6 +18,7 @@ function initialsOf(user, firebaseUser) {
 
 export default function UserMenu() {
   const { user, firebaseUser, logout } = useAuth()
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const rootRef = useRef(null)
@@ -42,7 +45,7 @@ export default function UserMenu() {
     navigate('/login')
   }
 
-  const displayName = user?.name || firebaseUser?.email?.split('@')[0] || 'Traveler'
+  const displayName = user?.name || firebaseUser?.email?.split('@')[0] || t('user.traveler')
   const email = user?.email || firebaseUser?.email || ''
 
   return (
@@ -52,7 +55,7 @@ export default function UserMenu() {
         className="avatar-btn"
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="Account menu"
+        aria-label={t('user.accountMenu')}
         onClick={() => setOpen((v) => !v)}
       >
         <span className="avatar">{initialsOf(user, firebaseUser)}</span>
@@ -70,7 +73,7 @@ export default function UserMenu() {
             role="menuitem"
             onClick={() => setOpen(false)}
           >
-            Profile
+            {t('user.profile')}
           </Link>
           <div className="dropdown-divider" role="separator" />
           <button
@@ -79,7 +82,7 @@ export default function UserMenu() {
             role="menuitem"
             onClick={handleLogout}
           >
-            Log out
+            {t('user.logout')}
           </button>
         </div>
       )}

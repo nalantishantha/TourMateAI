@@ -7,6 +7,8 @@ import useNavItems from '../../hooks/useNavItems'
 import Logo from './Logo'
 import UserMenu from './UserMenu'
 
+import LanguageSwitcher from './LanguageSwitcher'
+
 export default function Navbar({ onOpenDrawer }) {
   const navItems = useNavItems()
 
@@ -47,7 +49,8 @@ export default function Navbar({ onOpenDrawer }) {
           ))}
         </nav>
 
-        <div className="navbar-end">
+        <div className="navbar-end" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <LanguageSwitcher />
           <UserMenu />
         </div>
       </div>

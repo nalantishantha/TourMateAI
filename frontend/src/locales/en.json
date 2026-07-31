@@ -1,1 +1,23 @@
-{}
+{
+  "nav": {
+    "home": "Home",
+    "explore": "Explore",
+    "itineraries": "Itineraries",
+    "chat": "Chat",
+    "identify": "Identify",
+    "admin": "Admin"
+  },
+  "user": {
+    "traveler": "Traveler",
+    "accountMenu": "Account menu",
+    "profile": "Profile",
+    "logout": "Log out"
+  },
+  "footer": {
+    "tagline": "Your intelligent travel companion for exploring Sri Lanka.",
+    "discover": "Discover",
+    "askTourMate": "Ask TourMate",
+    "account": "Account",
+    "madeFor": "Made for travelers in Sri Lanka"
+  }
+}
