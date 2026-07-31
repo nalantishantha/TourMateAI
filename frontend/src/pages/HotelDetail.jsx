@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import PageContainer from '../components/layout/PageContainer'
 import AttractionMap from '../components/explore/AttractionMap'
 import StarRating from '../components/explore/StarRating'
@@ -32,6 +33,7 @@ function DetailSkeleton() {
 }
 
 export default function HotelDetail() {
+  const { t } = useTranslation()
   const { id } = useParams()
   const [hotel, setHotel] = useState(null)
   const [error, setError] = useState(null)
@@ -42,8 +44,8 @@ export default function HotelDetail() {
       .catch((err) => {
         setError(
           err?.response?.status === 404
-            ? 'That hotel does not exist.'
-            : 'Could not load this hotel. Please try again.'
+            ? t('detail.hotel.notFound')
+            : t('detail.hotel.loadError')
         )
       })
   }
@@ -68,7 +70,7 @@ export default function HotelDetail() {
             strokeLinejoin="round"
           />
         </svg>
-        Back to Explore
+        {t('detail.hotel.backToExplore')}
       </Link>
 
       {error ? (
@@ -76,10 +78,10 @@ export default function HotelDetail() {
           <span className="explore-empty-icon" aria-hidden="true">
             🛏️
           </span>
-          <h3>Hmm, that didn't work</h3>
+          <h3>{t('detail.hotel.errorTitle')}</h3>
           <p>{error}</p>
           <Link to="/explore" className="btn btn-primary">
-            Browse all places
+            {t('detail.hotel.browseBtn')}
           </Link>
         </div>
       ) : !hotel ? (
@@ -95,13 +97,13 @@ export default function HotelDetail() {
             <div className="detail-media-scrim" aria-hidden="true" />
             <div className="detail-media-caption">
               <span className="media-badge" style={{ textTransform: 'capitalize' }}>
-                {hotel.budget_tier || 'Hotel'}
+                {hotel.budget_tier || t('detail.hotel.fallbackBudget')}
               </span>
               <h1>{hotel.name}</h1>
               <div className="rating-line detail-rating-line">
                 <StarRating value={hotel.avg_rating} size={18} />
                 <span className="rating-value">
-                  {hotel.avg_rating ? hotel.avg_rating.toFixed(1) : 'New'}
+                  {hotel.avg_rating ? hotel.avg_rating.toFixed(1) : t('detail.hotel.newRating')}
                 </span>
                 <span className="rating-count">
                   · 📍 {hotel.location}
@@ -113,7 +115,7 @@ export default function HotelDetail() {
           <div className="detail-layout">
             <div className="detail-main">
               <section className="detail-about">
-                <h2 className="detail-section-title">About this hotel</h2>
+                <h2 className="detail-section-title">{t('detail.hotel.about')}</h2>
                 <p className="detail-description">{hotel.description}</p>
               </section>
             </div>
@@ -121,32 +123,32 @@ export default function HotelDetail() {
             <aside className="detail-aside">
               <section className="card detail-map-card">
                 <div className="detail-map-head">
-                  <h2 className="detail-section-title">Location</h2>
+                  <h2 className="detail-section-title">{t('detail.hotel.locationSection')}</h2>
                 </div>
                 {/* Reusing AttractionMap; it just needs a latitude and longitude property which hotel provides */}
                 <AttractionMap attraction={hotel} />
                 <dl className="geo-list">
                   <div className="geo-row">
-                    <dt>Latitude</dt>
+                    <dt>{t('detail.hotel.latitude')}</dt>
                     <dd>{hotel.latitude?.toFixed(4)}</dd>
                   </div>
                   <div className="geo-row">
-                    <dt>Longitude</dt>
+                    <dt>{t('detail.hotel.longitude')}</dt>
                     <dd>{hotel.longitude?.toFixed(4)}</dd>
                   </div>
                   <div className="geo-row">
-                    <dt>Location</dt>
+                    <dt>{t('detail.hotel.locationField')}</dt>
                     <dd>{hotel.location}</dd>
                   </div>
                   <div className="geo-row">
-                    <dt>Budget Tier</dt>
+                    <dt>{t('detail.hotel.budgetTier')}</dt>
                     <dd style={{ textTransform: 'capitalize' }}>{hotel.budget_tier}</dd>
                   </div>
                 </dl>
               </section>
 
               <section className="card card-pad">
-                <h2 className="detail-section-title">Weather</h2>
+                <h2 className="detail-section-title">{t('detail.hotel.weather')}</h2>
                 <WeatherCard
                   latitude={hotel.latitude}
                   longitude={hotel.longitude}

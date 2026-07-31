@@ -5,6 +5,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import PageContainer from '../components/layout/PageContainer'
 import AttractionImage from '../components/explore/AttractionImage'
 import AttractionMap from '../components/explore/AttractionMap'
@@ -35,15 +36,16 @@ function StarPicker({ value, onChange }) {
   const [hovered, setHovered] = useState(0)
   const active = hovered || value
 
+  const { t } = useTranslation()
   return (
-    <div className="star-picker" role="radiogroup" aria-label="Your rating">
+    <div className="star-picker" role="radiogroup" aria-label={t('detail.attraction.yourRatingAria')}>
       {[1, 2, 3, 4, 5].map((star) => (
         <button
           key={star}
           type="button"
           role="radio"
           aria-checked={value === star}
-          aria-label={`${star} star${star > 1 ? 's' : ''}`}
+          aria-label={`${star} ${star > 1 ? t('detail.attraction.stars') : t('detail.attraction.star')}`}
           className={`star-picker-btn${star <= active ? ' on' : ''}`}
           onClick={() => onChange(star)}
           onMouseEnter={() => setHovered(star)}
@@ -59,6 +61,7 @@ function StarPicker({ value, onChange }) {
 }
 
 function ReviewForm({ attractionId, onSubmitted }) {
+  const { t } = useTranslation()
   const [rating, setRating] = useState(0)
   const [comment, setComment] = useState('')
   const [busy, setBusy] = useState(false)
@@ -68,7 +71,7 @@ function ReviewForm({ attractionId, onSubmitted }) {
   const handleSubmit = async (event) => {
     event.preventDefault()
     if (!rating) {
-      setError('Pick a star rating first.')
+      setError(t('detail.attraction.pickStar'))
       return
     }
     setBusy(true)
@@ -83,7 +86,7 @@ function ReviewForm({ attractionId, onSubmitted }) {
       setRating(0)
       onSubmitted()
     } catch {
-      setError('Could not save your review. Please try again.')
+      setError(t('detail.attraction.saveReviewError'))
     } finally {
       setBusy(false)
     }
@@ -91,10 +94,9 @@ function ReviewForm({ attractionId, onSubmitted }) {
 
   return (
     <form className="review-form" onSubmit={handleSubmit}>
-      <h3>Share your experience</h3>
+      <h3>{t('detail.attraction.shareExperience')}</h3>
       <p className="review-form-hint">
-        Been here? Rate it and help other travelers. Posting again updates your
-        previous review.
+        {t('detail.attraction.reviewHint')}
       </p>
 
       <StarPicker
@@ -114,17 +116,17 @@ function ReviewForm({ attractionId, onSubmitted }) {
           setComment(e.target.value)
           setSaved(false)
         }}
-        placeholder="What made it memorable? (optional)"
-        aria-label="Your comment"
+        placeholder={t('detail.attraction.commentPlaceholder')}
+        aria-label={t('detail.attraction.commentAria')}
       />
 
       {error && <div className="alert alert-error">{error}</div>}
       {saved && !error && (
-        <div className="alert alert-success">Thanks — your review is saved.</div>
+        <div className="alert alert-success">{t('detail.attraction.reviewSaved')}</div>
       )}
 
       <button type="submit" className="btn btn-primary" disabled={busy}>
-        {busy ? 'Saving…' : 'Submit review'}
+        {busy ? t('detail.attraction.savingBtn') : t('detail.attraction.submitBtn')}
       </button>
     </form>
   )
@@ -155,6 +157,7 @@ function DetailSkeleton() {
 }
 
 export default function AttractionDetail() {
+  const { t } = useTranslation()
   const { id } = useParams()
   const [attraction, setAttraction] = useState(null)
   const [error, setError] = useState(null)
@@ -166,8 +169,8 @@ export default function AttractionDetail() {
       .catch((err) => {
         setError(
           err?.response?.status === 404
-            ? 'That attraction does not exist.'
-            : 'Could not load this attraction. Please try again.'
+            ? t('detail.attraction.notFound')
+            : t('detail.attraction.loadError')
         )
       })
   }
@@ -196,7 +199,7 @@ export default function AttractionDetail() {
             strokeLinejoin="round"
           />
         </svg>
-        Back to Explore
+        {t('detail.attraction.backToExplore')}
       </Link>
 
       {error ? (
@@ -204,10 +207,10 @@ export default function AttractionDetail() {
           <span className="explore-empty-icon" aria-hidden="true">
             🧭
           </span>
-          <h3>Hmm, that didn't work</h3>
+          <h3>{t('detail.attraction.errorTitle')}</h3>
           <p>{error}</p>
           <Link to="/explore" className="btn btn-primary">
-            Browse all attractions
+            {t('detail.attraction.browseBtn')}
           </Link>
         </div>
       ) : !attraction ? (
@@ -223,11 +226,11 @@ export default function AttractionDetail() {
               <div className="rating-line detail-rating-line">
                 <StarRating value={attraction.avg_rating} size={18} />
                 <span className="rating-value">
-                  {attraction.avg_rating ? attraction.avg_rating.toFixed(1) : 'New'}
+                  {attraction.avg_rating ? attraction.avg_rating.toFixed(1) : t('detail.attraction.newRating')}
                 </span>
                 <span className="rating-count">
                   · {attraction.rating_count}{' '}
-                  {attraction.rating_count === 1 ? 'review' : 'reviews'}
+                  {attraction.rating_count === 1 ? t('detail.attraction.reviewCount') : t('detail.attraction.reviewsCount')}
                 </span>
               </div>
             </div>
@@ -236,16 +239,16 @@ export default function AttractionDetail() {
           <div className="detail-layout">
             <div className="detail-main">
               <section className="detail-about">
-                <h2 className="detail-section-title">About this place</h2>
+                <h2 className="detail-section-title">{t('detail.attraction.about')}</h2>
                 <p className="detail-description">{attraction.description}</p>
               </section>
 
               <section className="detail-reviews">
-                <h2 className="detail-section-title">Traveler feedback</h2>
+                <h2 className="detail-section-title">{t('detail.attraction.feedback')}</h2>
 
                 {attraction.reviews.length === 0 ? (
                   <p className="reviews-empty">
-                    No reviews yet — be the first to share what it's like.
+                    {t('detail.attraction.noReviews')}
                   </p>
                 ) : (
                   <ul className="review-list" role="list">
@@ -282,27 +285,27 @@ export default function AttractionDetail() {
                   the layout, not a bolted-on widget. */}
               <section className="card detail-map-card">
                 <div className="detail-map-head">
-                  <h2 className="detail-section-title">Location</h2>
+                  <h2 className="detail-section-title">{t('detail.attraction.location')}</h2>
                 </div>
                 <AttractionMap attraction={attraction} />
                 <dl className="geo-list">
                   <div className="geo-row">
-                    <dt>Latitude</dt>
+                    <dt>{t('detail.attraction.latitude')}</dt>
                     <dd>{attraction.latitude?.toFixed(4)}</dd>
                   </div>
                   <div className="geo-row">
-                    <dt>Longitude</dt>
+                    <dt>{t('detail.attraction.longitude')}</dt>
                     <dd>{attraction.longitude?.toFixed(4)}</dd>
                   </div>
                   <div className="geo-row">
-                    <dt>Category</dt>
+                    <dt>{t('detail.attraction.category')}</dt>
                     <dd>{attraction.category}</dd>
                   </div>
                 </dl>
               </section>
 
               <section className="card card-pad">
-                <h2 className="detail-section-title">Weather</h2>
+                <h2 className="detail-section-title">{t('detail.attraction.weather')}</h2>
                 <WeatherCard
                   latitude={attraction.latitude}
                   longitude={attraction.longitude}
