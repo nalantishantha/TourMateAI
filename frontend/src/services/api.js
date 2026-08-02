@@ -18,6 +18,13 @@ api.interceptors.request.use(async (config) => {
     const token = await user.getIdToken()
     config.headers.Authorization = `Bearer ${token}`
   }
+  
+  // Attach current language to all GET requests
+  const lang = localStorage.getItem('i18nextLng') || 'en'
+  if (config.method === 'get') {
+    config.params = { ...config.params, lang }
+  }
+  
   return config
 })
 
