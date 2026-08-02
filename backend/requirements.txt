@@ -1,7 +1,7 @@
 # TourMateAI backend dependencies.
 #
 # Pinned to the versions first installed during Phase 0 (Python 3.10.11, Windows).
-# These are the DIRECT/top-level deps only — transitive deps (torch, grpcio, etc.)
+# These are the DIRECT/top-level deps only ?" transitive deps (torch, grpcio, etc.)
 # are resolved by pip and not listed here. To reproduce the exact full tree, use
 # `pip freeze`. To upgrade a package, bump its pin here and re-run pip install.
 
@@ -45,3 +45,6 @@ langgraph>=0.1.19
 langchain>=0.2.14
 langchain-core>=0.2.33
 langchain-google-genai>=1.0.8
+
+# --- Translation ---
+deep-translator==1.11.4
