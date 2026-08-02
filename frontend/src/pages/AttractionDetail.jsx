@@ -157,7 +157,7 @@ function DetailSkeleton() {
 }
 
 export default function AttractionDetail() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { id } = useParams()
   const [attraction, setAttraction] = useState(null)
   const [error, setError] = useState(null)
@@ -185,7 +185,7 @@ export default function AttractionDetail() {
       logInteraction(Number(id), 'view')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id])
+  }, [id, i18n.language])
 
   return (
     <PageContainer>

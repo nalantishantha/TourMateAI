@@ -153,7 +153,7 @@ function formatDates(itinerary, t) {
 
 export default function Dashboard() {
   const { user, firebaseUser } = useAuth()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const name = user?.name || firebaseUser?.email?.split('@')[0] || t('user.traveler')
   const hasInterests = (user?.preferences?.interests || []).length > 0
 
@@ -189,7 +189,7 @@ export default function Dashboard() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [i18n.language])
 
   return (
     <PageContainer>
