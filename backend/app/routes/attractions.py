@@ -18,6 +18,7 @@ from ..extensions import db
 from ..models import Attraction, Feedback
 from .auth import require_auth
 from .helpers import json_error
+from ..services.translation_service import translate_to_sinhala
 
 attractions_bp = Blueprint("attractions", __name__)
 
@@ -32,12 +33,21 @@ RATING_MIN = 1
 RATING_MAX = 5
 
 
-def _serialize_attraction(attraction):
+def _serialize_attraction(attraction, lang=None):
     """Shape an Attraction row for JSON (list + detail base)."""
+    
+    name = attraction.name
+    description = attraction.description
+    
+    if lang == 'si':
+        name = translate_to_sinhala(name)
+        if description:
+            description = translate_to_sinhala(description)
+            
     return {
         "id": attraction.id,
-        "name": attraction.name,
-        "description": attraction.description,
+        "name": name,
+        "description": description,
         "category": attraction.category,
         "latitude": attraction.latitude,
         "longitude": attraction.longitude,
@@ -88,6 +98,7 @@ def list_attractions():
     category = (request.args.get("category") or "").strip()
     search = (request.args.get("search") or "").strip()
     sort = (request.args.get("sort") or "name").strip().lower()
+    lang = request.args.get("lang")
 
     if sort not in SORT_OPTIONS:
         return json_error(
@@ -120,7 +131,7 @@ def list_attractions():
 
     return jsonify(
         {
-            "attractions": [_serialize_attraction(a) for a in pagination.items],
+            "attractions": [_serialize_attraction(a, lang) for a in pagination.items],
             "pagination": {
                 "page": pagination.page,
                 "per_page": pagination.per_page,
@@ -134,6 +145,9 @@ def list_attractions():
 @attractions_bp.get("/attractions/<int:attraction_id>")
 def get_attraction(attraction_id):
     """Return one attraction, with its average rating computed live from Feedback."""
+    
+    lang = request.args.get("lang")
+    
     attraction = db.session.get(Attraction, attraction_id)
     if attraction is None:
         return json_error("Attraction not found.", 404)
@@ -151,7 +165,7 @@ def get_attraction(attraction_id):
         .all()
     )
 
-    data = _serialize_attraction(attraction)
+    data = _serialize_attraction(attraction, lang)
     data["avg_rating"] = round(float(avg), 2) if avg is not None else 0
     data["rating_count"] = count
     data["reviews"] = [_serialize_feedback(f) for f in recent]
