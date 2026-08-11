@@ -4,6 +4,7 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 
 import enTranslations from './locales/en.json';
 import siTranslations from './locales/si.json';
+import itTranslations from './locales/it.json';
 
 i18n
   .use(LanguageDetector)
@@ -15,6 +16,9 @@ i18n
       },
       si: {
         translation: siTranslations
+      },
+      it: {
+        translation: itTranslations
       }
     },
     fallbackLng: 'en',
