@@ -307,7 +307,9 @@
       "weather": "Meteo",
       "yourRatingAria": "La tua valutazione",
       "star": "stella",
-      "stars": "stelle"
+      "stars": "stelle",
+      "nearby": "Luoghi vicini",
+      "nearbyEmpty": "Nessun luogo vicino trovato."
     },
     "hotel": {
       "notFound": "Quell'hotel non esiste.",
