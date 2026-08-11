@@ -11,6 +11,7 @@ import AttractionImage from '../components/explore/AttractionImage'
 import AttractionMap from '../components/explore/AttractionMap'
 import StarRating from '../components/explore/StarRating'
 import WeatherCard from '../components/weather/WeatherCard'
+import NearbyAttractions from '../components/explore/NearbyAttractions'
 import {
   fetchAttraction,
   logInteraction,
@@ -314,6 +315,9 @@ export default function AttractionDetail() {
               </section>
             </aside>
           </div>
+          
+          {/* Nearby Locations Section */}
+          <NearbyAttractions attractionId={attraction.id} />
         </>
       )}
     </PageContainer>
