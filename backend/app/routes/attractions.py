@@ -11,6 +11,7 @@ Routes (registered under ``/api``):
   - ``POST /api/attractions/<id>/feedback``        auth: submit/update a rating
 """
 
+import math
 from flask import Blueprint, g, jsonify, request
 from sqlalchemy import func
 
@@ -254,3 +255,50 @@ def _parse_pagination():
         return None, None, json_error("page and per_page must be positive.", 400)
 
     return page, min(per_page, MAX_PER_PAGE), None
+
+def haversine(lat1, lon1, lat2, lon2):
+    """
+    Calculate the great circle distance in kilometers between two points 
+    on the earth (specified in decimal degrees).
+    """
+    if lat1 is None or lon1 is None or lat2 is None or lon2 is None:
+        return float('inf')
+        
+    # Convert decimal degrees to radians 
+    lon1, lat1, lon2, lat2 = map(math.radians, [lon1, lat1, lon2, lat2])
+
+    # Haversine formula 
+    dlon = lon2 - lon1 
+    dlat = lat2 - lat1 
+    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+    c = 2 * math.asin(math.sqrt(a)) 
+    r = 6371 # Radius of earth in kilometers. Use 3956 for miles
+    return c * r
+
+@attractions_bp.get("/attractions/<int:attraction_id>/nearby")
+def get_nearby_attractions(attraction_id):
+    """Return the 4 nearest attractions to a given attraction based on Haversine distance."""
+    lang = request.args.get("lang")
+    
+    target = db.session.get(Attraction, attraction_id)
+    if target is None:
+        return json_error("Attraction not found.", 404)
+        
+    # Fetch all other attractions
+    all_others = Attraction.query.filter(Attraction.id != attraction_id).all()
+    
+    # Calculate distance for each and sort
+    attractions_with_dist = []
+    for a in all_others:
+        dist = haversine(target.latitude, target.longitude, a.latitude, a.longitude)
+        attractions_with_dist.append((dist, a))
+        
+    # Sort by distance (closest first)
+    attractions_with_dist.sort(key=lambda x: x[0])
+    
+    # Take top 4
+    nearest = [item[1] for item in attractions_with_dist[:4]]
+    
+    return jsonify({
+        "attractions": [_serialize_attraction(a, lang) for a in nearest]
+    })
