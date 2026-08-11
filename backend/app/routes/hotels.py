@@ -3,7 +3,7 @@ from sqlalchemy import or_
 
 from app.models import Hotel
 from app.extensions import db
-from app.services.translation_service import translate_to_sinhala
+from app.services.translation_service import translate_to_sinhala, translate_to_italian
 
 hotels_bp = Blueprint("hotels", __name__)
 
@@ -51,6 +51,10 @@ def get_hotels():
             h_dict["name"] = translate_to_sinhala(h_dict["name"])
             if h_dict["description"]:
                 h_dict["description"] = translate_to_sinhala(h_dict["description"])
+        elif lang == 'it':
+            h_dict["name"] = translate_to_italian(h_dict["name"])
+            if h_dict["description"]:
+                h_dict["description"] = translate_to_italian(h_dict["description"])
         serialized_hotels.append(h_dict)
 
     return jsonify(
@@ -73,5 +77,9 @@ def get_hotel(hotel_id):
         h_dict["name"] = translate_to_sinhala(h_dict["name"])
         if h_dict["description"]:
             h_dict["description"] = translate_to_sinhala(h_dict["description"])
+    elif lang == 'it':
+        h_dict["name"] = translate_to_italian(h_dict["name"])
+        if h_dict["description"]:
+            h_dict["description"] = translate_to_italian(h_dict["description"])
             
     return jsonify({"hotel": h_dict})

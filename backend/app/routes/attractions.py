@@ -18,7 +18,7 @@ from ..extensions import db
 from ..models import Attraction, Feedback
 from .auth import require_auth
 from .helpers import json_error
-from ..services.translation_service import translate_to_sinhala
+from ..services.translation_service import translate_to_sinhala, translate_to_italian
 
 attractions_bp = Blueprint("attractions", __name__)
 
@@ -43,6 +43,10 @@ def _serialize_attraction(attraction, lang=None):
         name = translate_to_sinhala(name)
         if description:
             description = translate_to_sinhala(description)
+    elif lang == 'it':
+        name = translate_to_italian(name)
+        if description:
+            description = translate_to_italian(description)
             
     return {
         "id": attraction.id,
