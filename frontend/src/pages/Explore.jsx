@@ -30,7 +30,7 @@ function SearchIcon() {
 }
 
 export default function Explore() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('') // debounced value actually sent to the API
   const [category, setCategory] = useState('')
@@ -99,7 +99,7 @@ export default function Explore() {
     return () => {
       cancelled = true
     }
-  }, [search, category, page, reloadKey])
+  }, [search, category, page, reloadKey, i18n.language])
 
   useEffect(() => {
     let cancelled = false
@@ -132,7 +132,7 @@ export default function Explore() {
     return () => {
       cancelled = true
     }
-  }, [search, hotelPage, reloadKey])
+  }, [search, hotelPage, reloadKey, i18n.language])
 
   const pickCategory = (value) => {
     setCategory(value)

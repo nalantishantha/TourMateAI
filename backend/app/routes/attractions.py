@@ -11,6 +11,7 @@ Routes (registered under ``/api``):
   - ``POST /api/attractions/<id>/feedback``        auth: submit/update a rating
 """
 
+import math
 from flask import Blueprint, g, jsonify, request
 from sqlalchemy import func
 
@@ -18,6 +19,7 @@ from ..extensions import db
 from ..models import Attraction, Feedback
 from .auth import require_auth
 from .helpers import json_error
+from ..services.translation_service import translate_to_sinhala, translate_to_italian
 
 attractions_bp = Blueprint("attractions", __name__)
 
@@ -32,12 +34,25 @@ RATING_MIN = 1
 RATING_MAX = 5
 
 
-def _serialize_attraction(attraction):
+def _serialize_attraction(attraction, lang=None):
     """Shape an Attraction row for JSON (list + detail base)."""
+    
+    name = attraction.name
+    description = attraction.description
+    
+    if lang == 'si':
+        name = translate_to_sinhala(name)
+        if description:
+            description = translate_to_sinhala(description)
+    elif lang == 'it':
+        name = translate_to_italian(name)
+        if description:
+            description = translate_to_italian(description)
+            
     return {
         "id": attraction.id,
-        "name": attraction.name,
-        "description": attraction.description,
+        "name": name,
+        "description": description,
         "category": attraction.category,
         "latitude": attraction.latitude,
         "longitude": attraction.longitude,
@@ -88,6 +103,7 @@ def list_attractions():
     category = (request.args.get("category") or "").strip()
     search = (request.args.get("search") or "").strip()
     sort = (request.args.get("sort") or "name").strip().lower()
+    lang = request.args.get("lang")
 
     if sort not in SORT_OPTIONS:
         return json_error(
@@ -120,7 +136,7 @@ def list_attractions():
 
     return jsonify(
         {
-            "attractions": [_serialize_attraction(a) for a in pagination.items],
+            "attractions": [_serialize_attraction(a, lang) for a in pagination.items],
             "pagination": {
                 "page": pagination.page,
                 "per_page": pagination.per_page,
@@ -134,6 +150,9 @@ def list_attractions():
 @attractions_bp.get("/attractions/<int:attraction_id>")
 def get_attraction(attraction_id):
     """Return one attraction, with its average rating computed live from Feedback."""
+    
+    lang = request.args.get("lang")
+    
     attraction = db.session.get(Attraction, attraction_id)
     if attraction is None:
         return json_error("Attraction not found.", 404)
@@ -151,7 +170,7 @@ def get_attraction(attraction_id):
         .all()
     )
 
-    data = _serialize_attraction(attraction)
+    data = _serialize_attraction(attraction, lang)
     data["avg_rating"] = round(float(avg), 2) if avg is not None else 0
     data["rating_count"] = count
     data["reviews"] = [_serialize_feedback(f) for f in recent]
@@ -236,3 +255,50 @@ def _parse_pagination():
         return None, None, json_error("page and per_page must be positive.", 400)
 
     return page, min(per_page, MAX_PER_PAGE), None
+
+def haversine(lat1, lon1, lat2, lon2):
+    """
+    Calculate the great circle distance in kilometers between two points 
+    on the earth (specified in decimal degrees).
+    """
+    if lat1 is None or lon1 is None or lat2 is None or lon2 is None:
+        return float('inf')
+        
+    # Convert decimal degrees to radians 
+    lon1, lat1, lon2, lat2 = map(math.radians, [lon1, lat1, lon2, lat2])
+
+    # Haversine formula 
+    dlon = lon2 - lon1 
+    dlat = lat2 - lat1 
+    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+    c = 2 * math.asin(math.sqrt(a)) 
+    r = 6371 # Radius of earth in kilometers. Use 3956 for miles
+    return c * r
+
+@attractions_bp.get("/attractions/<int:attraction_id>/nearby")
+def get_nearby_attractions(attraction_id):
+    """Return the 4 nearest attractions to a given attraction based on Haversine distance."""
+    lang = request.args.get("lang")
+    
+    target = db.session.get(Attraction, attraction_id)
+    if target is None:
+        return json_error("Attraction not found.", 404)
+        
+    # Fetch all other attractions
+    all_others = Attraction.query.filter(Attraction.id != attraction_id).all()
+    
+    # Calculate distance for each and sort
+    attractions_with_dist = []
+    for a in all_others:
+        dist = haversine(target.latitude, target.longitude, a.latitude, a.longitude)
+        attractions_with_dist.append((dist, a))
+        
+    # Sort by distance (closest first)
+    attractions_with_dist.sort(key=lambda x: x[0])
+    
+    # Take top 4
+    nearest = [item[1] for item in attractions_with_dist[:4]]
+    
+    return jsonify({
+        "attractions": [_serialize_attraction(a, lang) for a in nearest]
+    })

@@ -307,7 +307,9 @@
       "weather": "Weather",
       "yourRatingAria": "Your rating",
       "star": "star",
-      "stars": "stars"
+      "stars": "stars",
+      "nearby": "Nearby Locations",
+      "nearbyEmpty": "No nearby locations found."
     },
     "hotel": {
       "notFound": "That hotel does not exist.",

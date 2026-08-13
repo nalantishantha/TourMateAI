@@ -4,20 +4,21 @@ import { useTranslation } from 'react-i18next'
 export default function LanguageSwitcher({ className = 'btn-ghost' }) {
   const { i18n } = useTranslation()
 
-  const toggleLanguage = () => {
-    const newLang = i18n.language === 'en' ? 'si' : 'en'
-    i18n.changeLanguage(newLang)
+  const changeLanguage = (e) => {
+    i18n.changeLanguage(e.target.value)
   }
 
   return (
-    <button
-      type="button"
-      className={`btn ${className}`}
-      style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
-      onClick={toggleLanguage}
-      aria-label="Toggle language"
+    <select
+      className={`select select-bordered select-sm ${className}`}
+      style={{ padding: '0.2rem 1.8rem 0.2rem 0.8rem', fontSize: '0.85rem', minHeight: '2rem', height: '2rem' }}
+      value={i18n.language || 'en'}
+      onChange={changeLanguage}
+      aria-label="Select language"
     >
-      {i18n.language === 'en' ? 'සිංහල' : 'English'}
-    </button>
+      <option value="en">English</option>
+      <option value="si">සිංහල</option>
+      <option value="it">Italiano</option>
+    </select>
   )
 }

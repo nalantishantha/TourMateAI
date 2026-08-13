@@ -33,7 +33,7 @@ function DetailSkeleton() {
 }
 
 export default function HotelDetail() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { id } = useParams()
   const [hotel, setHotel] = useState(null)
   const [error, setError] = useState(null)
@@ -56,7 +56,7 @@ export default function HotelDetail() {
     setError(null)
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id])
+  }, [id, i18n.language])
 
   return (
     <PageContainer>

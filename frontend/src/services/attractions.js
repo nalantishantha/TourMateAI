@@ -40,3 +40,8 @@ export function logInteraction(attractionId, interactionType) {
     })
     .catch(() => {})
 }
+
+export async function fetchNearbyAttractions(id) {
+  const { data } = await api.get(`/attractions/${id}/nearby`)
+  return data.attractions
+}

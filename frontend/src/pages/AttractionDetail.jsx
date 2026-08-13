@@ -11,6 +11,7 @@ import AttractionImage from '../components/explore/AttractionImage'
 import AttractionMap from '../components/explore/AttractionMap'
 import StarRating from '../components/explore/StarRating'
 import WeatherCard from '../components/weather/WeatherCard'
+import NearbyAttractions from '../components/explore/NearbyAttractions'
 import {
   fetchAttraction,
   logInteraction,
@@ -157,7 +158,7 @@ function DetailSkeleton() {
 }
 
 export default function AttractionDetail() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { id } = useParams()
   const [attraction, setAttraction] = useState(null)
   const [error, setError] = useState(null)
@@ -185,7 +186,7 @@ export default function AttractionDetail() {
       logInteraction(Number(id), 'view')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id])
+  }, [id, i18n.language])
 
   return (
     <PageContainer>
@@ -314,6 +315,9 @@ export default function AttractionDetail() {
               </section>
             </aside>
           </div>
+          
+          {/* Nearby Locations Section */}
+          <NearbyAttractions attractionId={attraction.id} />
         </>
       )}
     </PageContainer>
