@@ -64,6 +64,7 @@ def _serialize_itinerary(itinerary):
         "stops": json.loads(itinerary.stops) if itinerary.stops else [],
         "start_date": itinerary.start_date.isoformat() if itinerary.start_date else None,
         "end_date": itinerary.end_date.isoformat() if itinerary.end_date else None,
+        "trip_type": itinerary.trip_type,
         "created_at": itinerary.created_at.isoformat() if itinerary.created_at else None,
         "item_count": len(itinerary.items),
         "preview_stops": stops,
@@ -197,6 +198,7 @@ def create_itinerary():
         return error
 
     is_ai_generated = bool(body.get("is_ai_generated", False))
+    trip_type = body.get("trip_type", "Solo")
 
     itinerary = Itinerary(
         user_id=g.current_user.id, 
@@ -207,6 +209,7 @@ def create_itinerary():
         stops=stops_json,
         start_date=start, 
         end_date=end,
+        trip_type=trip_type,
         is_ai_generated=is_ai_generated
     )
     db.session.add(itinerary)
@@ -245,6 +248,9 @@ def update_itinerary(itinerary_id):
         if error:
             return error
         itinerary.title = title
+
+    if "trip_type" in body:
+        itinerary.trip_type = body.get("trip_type")
 
     start_given, start, error = _parse_date_field(body, "start_date")
     if error:

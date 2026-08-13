@@ -65,6 +65,7 @@ def intent_agent(state: PlannerState) -> PlannerState:
     start_loc_pref = preferences.get("start_location", "")
     end_loc_pref = preferences.get("end_location", "")
     stops_pref = preferences.get("stops", [])
+    trip_type = preferences.get("trip_type", "Solo")
     
     # Base defaults
     target_lat, target_lng = 7.8731, 80.7718
@@ -93,10 +94,11 @@ def intent_agent(state: PlannerState) -> PlannerState:
         radius_km = 100.0
 
     # Ask LLM to refine interests from description, and possibly guess location if 'To' was empty
-    if description:
+    if description or trip_type:
         prompt = f"""
         You are a travel assistant for a Sri Lanka travel app.
         Analyze the following user trip description: "{description}"
+        The user is planning a {trip_type} trip. When refining their interests, strictly factor this in (e.g., if 'Family', include kid-friendly; if 'Couple', include romantic, if 'Solo', include backpacking/adventure/safety).
         
         Extract:
         1. The specific location name they want to visit (if any). e.g., "Galle", "Kandy", "Dikwella". If none mentioned or if it's already '{end_loc_pref}', return "".
@@ -161,6 +163,7 @@ def discovery_agent(state: PlannerState) -> PlannerState:
     waypoints = state.get("waypoints", [])
     radius_km = state.get("radius_km", 500.0)
     interests = state.get("refined_interests", [])
+    trip_type = state.get("preferences", {}).get("trip_type", "Solo")
     
     places = Attraction.query.all()
     all_places = [{"id": p.id, "name": p.name, "category": p.category, "description": p.description, "latitude": p.latitude, "longitude": p.longitude} for p in places]
@@ -184,12 +187,13 @@ def discovery_agent(state: PlannerState) -> PlannerState:
     You are a travel recommender for Sri Lanka.
     The user is traveling on a route. Key stops include: {', '.join([w['name'] for w in waypoints]) if waypoints else 'General exploration'}
     
+    The user is traveling as a {trip_type}.
     The user is interested in: {', '.join(interests) if interests else 'General tourism'}
     
     Here are the places that are geographically close to their route:
     {json.dumps(available_places, indent=2)}
     
-    Select the top places that best match their interests and would make logical stops along this route.
+    Select the top places that best match their interests and would make logical stops for this specific type of group ({trip_type}).
     Return ONLY a JSON array of their integer IDs.
     Example: [7, 15, 3]
     """
