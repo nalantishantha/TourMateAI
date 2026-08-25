@@ -10,7 +10,7 @@ export async function fetchItineraries() {
   return data.itineraries // [{ id, title, start_date, end_date, item_count, preview_stops }]
 }
 
-export async function createItinerary({ title, description, startLocation, endLocation, stops, startDate, endDate, is_ai_generated }) {
+export async function createItinerary({ title, description, startLocation, endLocation, stops, startDate, endDate, is_ai_generated, tripType }) {
   const { data } = await api.post('/itineraries', {
     title,
     description,
@@ -20,6 +20,7 @@ export async function createItinerary({ title, description, startLocation, endLo
     start_date: startDate || null,
     end_date: endDate || null,
     is_ai_generated: is_ai_generated || false,
+    trip_type: tripType || 'Solo',
   })
   return data.itinerary // detail shape (items: [])
 }

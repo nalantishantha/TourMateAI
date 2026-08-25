@@ -31,6 +31,7 @@ function NewTripModal({ onClose }) {
   const [description, setDescription] = useState('')
   const [startDate, setStartDate] = useState(todayIso())
   const [endDate, setEndDate] = useState(todayIso(2))
+  const [tripType, setTripType] = useState('Solo')
   const [preferences, setPreferences] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
@@ -60,6 +61,7 @@ function NewTripModal({ onClose }) {
         startDate,
         endDate,
         is_ai_generated: true,
+        tripType,
       })
       
       const fullPreferences = preferences.trim()
@@ -186,6 +188,21 @@ function NewTripModal({ onClose }) {
             </div>
           </div>
           
+          <div className="field">
+            <label className="label" htmlFor="trip-type">Trip Type</label>
+            <select
+              id="trip-type"
+              className="input"
+              value={tripType}
+              onChange={(e) => setTripType(e.target.value)}
+            >
+              <option value="Solo">Solo</option>
+              <option value="Couple">Couple</option>
+              <option value="Friends">Friends</option>
+              <option value="Family">Family</option>
+            </select>
+          </div>
+
           <div className="field">
             <label className="label" htmlFor="trip-prefs">{t('itineraries.prefsLabel')}</label>
             <textarea

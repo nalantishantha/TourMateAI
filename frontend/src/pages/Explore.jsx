@@ -13,6 +13,7 @@ import HotelCard, { HotelCardSkeleton } from '../components/explore/HotelCard'
 import useLikes from '../hooks/useLikes'
 import { fetchAttractions } from '../services/attractions'
 import { fetchHotels } from '../services/hotels'
+import { INTERESTS } from '../services/users'
 import { categoryScene, scenes } from '../assets/photos'
 import '../styles/explore.css'
 
@@ -38,7 +39,7 @@ export default function Explore() {
 
   const [attractions, setAttractions] = useState([])
   const [pagination, setPagination] = useState(null)
-  const [categories, setCategories] = useState([])
+  const [categories, setCategories] = useState([...INTERESTS].sort())
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState(null)
@@ -77,14 +78,6 @@ export default function Explore() {
           page === 1 ? data.attractions : [...prev, ...data.attractions]
         )
         setPagination(data.pagination)
-        // Build the chip list once, from the first unfiltered result set.
-        if (!search && !category) {
-          setCategories((prev) =>
-            prev.length
-              ? prev
-              : [...new Set(data.attractions.map((a) => a.category).filter(Boolean))].sort()
-          )
-        }
       })
       .catch(() => {
         if (!cancelled) setError(t('explore.errorPlacesDesc'))

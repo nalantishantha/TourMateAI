@@ -22,6 +22,7 @@ class Itinerary(db.Model):
     stops = db.Column(db.Text)
     start_date = db.Column(db.Date)
     end_date = db.Column(db.Date)
+    trip_type = db.Column(db.String(50), default="Solo")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     is_ai_generated = db.Column(db.Boolean, default=False)

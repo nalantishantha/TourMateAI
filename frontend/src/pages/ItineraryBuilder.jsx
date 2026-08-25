@@ -774,6 +774,7 @@ export default function ItineraryBuilder() {
           start_location: itinerary.start_location,
           end_location: itinerary.end_location,
           stops: itinerary.stops,
+          trip_type: itinerary.trip_type,
           user_preferences: prefsOverride || location.state?.initialPreferences
         } 
       })
