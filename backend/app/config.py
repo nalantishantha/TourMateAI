@@ -30,8 +30,8 @@ class Config:
 
     # quote_plus so passwords with special characters don't corrupt the URI.
     SQLALCHEMY_DATABASE_URI = (
-        f"mysql+pymysql://{DB_USER}:{quote_plus(DB_PASSWORD)}"
-        f"@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+        os.environ.get("DATABASE_URL")
+        or f"mysql+pymysql://{DB_USER}:{quote_plus(DB_PASSWORD)}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
