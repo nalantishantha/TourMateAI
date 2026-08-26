@@ -64,25 +64,11 @@ SAMPLE_ATTRACTIONS = [
         "description": "A vast cave monastery of five sanctuaries filled with Buddha statues and murals.",
     },
     {
-        "name": "Nuwara Eliya",
-        "category": "Hill Country",
-        "latitude": 6.9497,
-        "longitude": 80.7891,
-        "description": "A cool highland town nicknamed 'Little England', surrounded by tea estates and waterfalls.",
-    },
-    {
         "name": "Mirissa Beach",
         "category": "Beach",
         "latitude": 5.9483,
         "longitude": 80.4589,
         "description": "A palm-fringed southern beach known for surfing and blue-whale watching.",
-    },
-    {
-        "name": "Anuradhapura",
-        "category": "Heritage",
-        "latitude": 8.3114,
-        "longitude": 80.4037,
-        "description": "An ancient sacred city with dagobas, monasteries and the Sri Maha Bodhi tree.",
     },
     {
         "name": "Polonnaruwa",
@@ -407,13 +393,6 @@ SAMPLE_ATTRACTIONS = [
         "description": "The oldest and largest park in Colombo, featuring giant trees, a large Buddha statue, and water fountains.",
     },
     {
-        "name": "Lotus Tower",
-        "category": "Scenic",
-        "latitude": 6.9271,
-        "longitude": 79.8585,
-        "description": "The tallest self-supported structure in South Asia, offering an observation deck with sweeping views over Colombo.",
-    },
-    {
         "name": "Kelaniya Raja Maha Vihara",
         "category": "Religious",
         "latitude": 6.9482,
@@ -691,6 +670,21 @@ def seed_db_command():
         click.echo(f"Seeded {added_count} new attractions.")
     else:
         click.echo("All attractions are already present; skipping seed.")
+
+    # Seed an admin user so anyone cloning the repo can easily get admin access
+    # by signing up via Firebase with this email address.
+    admin_email = "admin@gmail.com"
+    if not User.query.filter_by(email=admin_email).first():
+        admin_user = User(
+            name="Admin User",
+            email=admin_email,
+            is_admin=True
+        )
+        db.session.add(admin_user)
+        db.session.commit()
+        click.echo(f"Seeded admin user: {admin_email}. Sign up with this email (e.g. password: admin123) to access the admin portal.")
+    else:
+        click.echo(f"Admin user {admin_email} already exists.")
 
 
 @click.command("set-admin")

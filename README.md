@@ -105,7 +105,16 @@ cd TourMateAI
    flask seed-db
    ```
 
-### 4. Frontend Setup
+### 4. Train the AI Vision Model 🤖
+The pre-trained CNN model file (`landmark_cnn.keras`) is large and is **not committed to the repository**. Before using the Landmark Image Recognition feature, you must train the model locally.
+1. Ensure your virtual environment is activated and you are in the `backend` directory.
+2. Run the training script:
+   ```bash
+   python app/ai/vision/train.py
+   ```
+   *(This will process your dataset and generate the necessary `.keras` model file).*
+
+### 5. Frontend Setup
 1. Open a new terminal and navigate to the `frontend` directory:
    ```bash
    cd frontend
@@ -126,7 +135,7 @@ cd TourMateAI
      VITE_FIREBASE_APP_ID=your_firebase_app_id
      ```
 
-### 5. Run the Application
+### 6. Run the Application
 1. Start the Flask backend (ensure your virtual environment is activated):
    ```bash
    # From the backend directory

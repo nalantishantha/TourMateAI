@@ -31,7 +31,6 @@ import harithaKandaSrc from './Haritha kanda or Green Mountain - Bopaththalawa, 
 import hortonPlainsSrc from './horton_pains.webp'
 import wilpattuSrc from './Wilpaththu National Park.jpeg'
 import polonnaruwaSrc from './Polonnaruwa, Sri Lanka.jpeg'
-import polonnaruwaSrc from './Polonnaruwa, Sri Lanka.jpeg'
 import anuradhapuraSrc from './Anuradhapura.jpeg'
 import bahirawakandaSrc from './Bahirawakanda_Vihara_Budda_Statue.jpg'
 import bambarakandaSrc from './Bambarakanda_falls.jpg'
