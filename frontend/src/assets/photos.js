@@ -31,7 +31,47 @@ import harithaKandaSrc from './Haritha kanda or Green Mountain - Bopaththalawa, 
 import hortonPlainsSrc from './horton_pains.webp'
 import wilpattuSrc from './Wilpaththu National Park.jpeg'
 import polonnaruwaSrc from './Polonnaruwa, Sri Lanka.jpeg'
+import polonnaruwaSrc from './Polonnaruwa, Sri Lanka.jpeg'
 import anuradhapuraSrc from './Anuradhapura.jpeg'
+import bahirawakandaSrc from './Bahirawakanda_Vihara_Budda_Statue.jpg'
+import bambarakandaSrc from './Bambarakanda_falls.jpg'
+import ceylonTeaMuseumSrc from './Ceylon_Tea_Museum.jpg'
+import colomboLotusTowerSrc from './Colombo_Lotus_Tower.jpg'
+import delftIslandSrc from './Delft_Island.jpg'
+import diyalumaFallsSrc from './Diyaluma_Falls.jpg'
+import gangaramayaTempleSrc from './Gangaramaya_Temple.jpg'
+import gregoryLakeSrc from './Gregory_Lake.jpg'
+import hakgalaBotanicalGardenSrc from './Hakgala_Botanical_Garden.jpg'
+import isurumuniyaSrc from './Isurumuniya.jpg'
+import jaffnaFortSrc from './Jaffna_Fort.jpg'
+import jaffnaPublicLibrarySrc from './Jaffna_Public_Library.jpg'
+import japanesePeacePagodaSrc from './Japanese_Peace_Pagoda.jpg'
+import jetavanaramayaSrc from './Jetavanaramaya.jpg'
+import kalpitiyaPeninsulaSrc from './Kalpitiya_Peninsula.jpg'
+import kandyViewPointSrc from './Kandy_View_Point.jpg'
+import keerimalaiSpringSrc from './Keerimalai_Spring.jpg'
+import kelaniyaRajaMahaViharaSrc from './Kelaniya_Raja_Maha_Vihara.jpg'
+import kithalEllaWaterfallSrc from './Kithal_Ella_Waterfall.jpg'
+import kithulgalaSrc from './Kithulgala.jpg'
+import abayagiriViharayaSrc from './abayagiri_viharaya.jpg'
+import ambuluwawaTowerSrc from './ambuluwawa_tower.jpg'
+import koneswaramTempleSrc from './koneswaram_temple.jpg'
+import kosgodaSeaTurtleConservationProjectSrc from './kosgoda_sea_turtle_conservation_project.jpg'
+import liptonSeatSrc from './lipton_seat.jpg'
+import littleAdamsPeakSrc from './little_adams_peak.jpg'
+import loversLeapWaterfallSrc from './lovers_leap_waterfall.jpg'
+import madihaBeachSrc from './madiha_beach.jpg'
+import mihintaleSrc from './mihintale.webp'
+import moonPlainsSrc from './moon_plains.jpg'
+import muthurajawelaMarshSrc from './muthurajawela_marsh.jpg'
+import nagadepaPuranaViharaSrc from './nagadepa_purana_vihara.jpg'
+import nallurKandaswamyTempleSrc from './nallur_kandaswamy_temple.jpg'
+import nationalMaritimeMuseumSrc from './national_maritime_museum.jpg'
+import parrotRockBridgeSrc from './parrot_rock_bridge.jpg'
+import pedroTeaEstateSrc from './pedro_tea_Estate.jpg'
+import pidurangalaSrc from './pidurangala.jpg'
+import pointPedroSrc from './point_pedro.jpg'
+import yapahuwaRockFortressSrc from './yapahuwa_rock_fortress.jpg'
 
 /** Named, hand-cropped scenes for editorial use (heroes, feature tiles). */
 export const scenes = {
@@ -166,6 +206,45 @@ export const scenes = {
     position: '50% 50%',
     alt: 'The sacred dagobas of Anuradhapura',
   },
+  bahirawakanda: { src: bahirawakandaSrc, position: '50% 50%', alt: 'Bahirawakanda Vihara Buddha Statue' },
+  bambarakanda: { src: bambarakandaSrc, position: '50% 50%', alt: 'Bambarakanda Falls' },
+  ceylonTeaMuseum: { src: ceylonTeaMuseumSrc, position: '50% 50%', alt: 'Ceylon Tea Museum' },
+  colomboLotusTower: { src: colomboLotusTowerSrc, position: '50% 50%', alt: 'Colombo Lotus Tower' },
+  delftIsland: { src: delftIslandSrc, position: '50% 50%', alt: 'Delft Island' },
+  diyalumaFalls: { src: diyalumaFallsSrc, position: '50% 50%', alt: 'Diyaluma Falls' },
+  gangaramayaTemple: { src: gangaramayaTempleSrc, position: '50% 50%', alt: 'Gangaramaya Temple' },
+  gregoryLake: { src: gregoryLakeSrc, position: '50% 50%', alt: 'Gregory Lake' },
+  hakgalaBotanicalGarden: { src: hakgalaBotanicalGardenSrc, position: '50% 50%', alt: 'Hakgala Botanical Garden' },
+  isurumuniya: { src: isurumuniyaSrc, position: '50% 50%', alt: 'Isurumuniya' },
+  jaffnaFort: { src: jaffnaFortSrc, position: '50% 50%', alt: 'Jaffna Fort' },
+  jaffnaPublicLibrary: { src: jaffnaPublicLibrarySrc, position: '50% 50%', alt: 'Jaffna Public Library' },
+  japanesePeacePagoda: { src: japanesePeacePagodaSrc, position: '50% 50%', alt: 'Japanese Peace Pagoda' },
+  jetavanaramaya: { src: jetavanaramayaSrc, position: '50% 50%', alt: 'Jetavanaramaya' },
+  kalpitiyaPeninsula: { src: kalpitiyaPeninsulaSrc, position: '50% 50%', alt: 'Kalpitiya Peninsula' },
+  kandyViewPoint: { src: kandyViewPointSrc, position: '50% 50%', alt: 'Kandy View Point' },
+  keerimalaiSpring: { src: keerimalaiSpringSrc, position: '50% 50%', alt: 'Keerimalai Spring' },
+  kelaniyaRajaMahaVihara: { src: kelaniyaRajaMahaViharaSrc, position: '50% 50%', alt: 'Kelaniya Raja Maha Vihara' },
+  kithalEllaWaterfall: { src: kithalEllaWaterfallSrc, position: '50% 50%', alt: 'Kithal Ella Waterfall' },
+  kithulgala: { src: kithulgalaSrc, position: '50% 50%', alt: 'Kithulgala' },
+  abayagiriViharaya: { src: abayagiriViharayaSrc, position: '50% 50%', alt: 'Abayagiri Viharaya' },
+  ambuluwawaTower: { src: ambuluwawaTowerSrc, position: '50% 50%', alt: 'Ambuluwawa Tower' },
+  koneswaramTemple: { src: koneswaramTempleSrc, position: '50% 50%', alt: 'Koneswaram Temple' },
+  kosgodaSeaTurtleConservationProject: { src: kosgodaSeaTurtleConservationProjectSrc, position: '50% 50%', alt: 'Kosgoda Sea Turtle Conservation Project' },
+  liptonSeat: { src: liptonSeatSrc, position: '50% 50%', alt: 'Lipton Seat' },
+  littleAdamsPeak: { src: littleAdamsPeakSrc, position: '50% 50%', alt: 'Little Adams Peak' },
+  loversLeapWaterfall: { src: loversLeapWaterfallSrc, position: '50% 50%', alt: 'Lovers Leap Waterfall' },
+  madihaBeach: { src: madihaBeachSrc, position: '50% 50%', alt: 'Madiha Beach' },
+  mihintale: { src: mihintaleSrc, position: '50% 50%', alt: 'Mihintale' },
+  moonPlains: { src: moonPlainsSrc, position: '50% 50%', alt: 'Moon Plains' },
+  muthurajawelaMarsh: { src: muthurajawelaMarshSrc, position: '50% 50%', alt: 'Muthurajawela Marsh' },
+  nagadepaPuranaVihara: { src: nagadepaPuranaViharaSrc, position: '50% 50%', alt: 'Nagadepa Purana Vihara' },
+  nallurKandaswamyTemple: { src: nallurKandaswamyTempleSrc, position: '50% 50%', alt: 'Nallur Kandaswamy Temple' },
+  nationalMaritimeMuseum: { src: nationalMaritimeMuseumSrc, position: '50% 50%', alt: 'National Maritime Museum' },
+  parrotRockBridge: { src: parrotRockBridgeSrc, position: '50% 50%', alt: 'Parrot Rock Bridge' },
+  pedroTeaEstate: { src: pedroTeaEstateSrc, position: '50% 50%', alt: 'Pedro Tea Estate' },
+  pidurangala: { src: pidurangalaSrc, position: '50% 50%', alt: 'Pidurangala' },
+  pointPedro: { src: pointPedroSrc, position: '50% 50%', alt: 'Point Pedro' },
+  yapahuwaRockFortress: { src: yapahuwaRockFortressSrc, position: '50% 50%', alt: 'Yapahuwa Rock Fortress' },
 }
 
 /* Name → photo rules, first match wins. Substring patterns are deliberately
@@ -196,6 +275,45 @@ const NAME_RULES = [
   [/polonnaruwa/, scenes.polonnaruwa],
   [/anuradhapura/, scenes.anuradhapura],
   [/stilt|koggala/, scenes.stiltFishing],
+  [/bahirawakanda/, scenes.bahirawakanda],
+  [/bambarakanda/, scenes.bambarakanda],
+  [/tea museum/, scenes.ceylonTeaMuseum],
+  [/lotus tower/, scenes.colomboLotusTower],
+  [/delft island/, scenes.delftIsland],
+  [/diyaluma/, scenes.diyalumaFalls],
+  [/gangaramaya/, scenes.gangaramayaTemple],
+  [/gregory lake/, scenes.gregoryLake],
+  [/hakgala/, scenes.hakgalaBotanicalGarden],
+  [/isurumuniya/, scenes.isurumuniya],
+  [/jaffna fort/, scenes.jaffnaFort],
+  [/jaffna public library/, scenes.jaffnaPublicLibrary],
+  [/peace pagoda/, scenes.japanesePeacePagoda],
+  [/jetavanaramaya/, scenes.jetavanaramaya],
+  [/kalpitiya/, scenes.kalpitiyaPeninsula],
+  [/kandy view/, scenes.kandyViewPoint],
+  [/keerimalai/, scenes.keerimalaiSpring],
+  [/kelaniya/, scenes.kelaniyaRajaMahaVihara],
+  [/kithal ella/, scenes.kithalEllaWaterfall],
+  [/kithulgala/, scenes.kithulgala],
+  [/abayagiri/, scenes.abayagiriViharaya],
+  [/ambuluwawa/, scenes.ambuluwawaTower],
+  [/koneswaram/, scenes.koneswaramTemple],
+  [/kosgoda|turtle/, scenes.kosgodaSeaTurtleConservationProject],
+  [/lipton/, scenes.liptonSeat],
+  [/little adam/, scenes.littleAdamsPeak],
+  [/lover.*leap/, scenes.loversLeapWaterfall],
+  [/madiha/, scenes.madihaBeach],
+  [/mihintale/, scenes.mihintale],
+  [/moon plain/, scenes.moonPlains],
+  [/muthurajawela/, scenes.muthurajawelaMarsh],
+  [/nagadepa/, scenes.nagadepaPuranaVihara],
+  [/nallur/, scenes.nallurKandaswamyTemple],
+  [/maritime museum/, scenes.nationalMaritimeMuseum],
+  [/parrot rock/, scenes.parrotRockBridge],
+  [/pedro tea/, scenes.pedroTeaEstate],
+  [/pidurangala/, scenes.pidurangala],
+  [/point pedro/, scenes.pointPedro],
+  [/yapahuwa/, scenes.yapahuwaRockFortress],
 ]
 
 /* Generic (non-landmark) shots reused for unmatched rows of a category —
