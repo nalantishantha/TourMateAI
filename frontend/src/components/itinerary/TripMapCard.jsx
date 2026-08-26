@@ -36,12 +36,15 @@ function formatDuration(seconds) {
   return m ? `${h} h ${m} min` : `${h} h`
 }
 
-// `origin` (optional) lets a single-stop day be routed from the user's location.
 function embedSrc(stops, origin) {
   if (stops.length === 1 && !origin) {
+    const stop = stops[0]
+    const query = typeof stop === 'string' 
+      ? stop 
+      : `${stop.name}${stop.location ? `, ${stop.location}` : ''}`
     return (
       `https://www.google.com/maps/embed/v1/place?key=${MAPS_KEY}` +
-      `&q=${encodeURIComponent(coord(stops[0]))}&zoom=13`
+      `&q=${encodeURIComponent(query)}&zoom=13`
     )
   }
   const points = origin ? [origin, ...stops] : stops
@@ -59,7 +62,11 @@ function embedSrc(stops, origin) {
 
 function externalUrl(stops, origin) {
   if (stops.length === 1 && !origin) {
-    return `https://www.google.com/maps/search/?api=1&query=${coord(stops[0])}`
+    const stop = stops[0]
+    const query = typeof stop === 'string' 
+      ? stop 
+      : `${stop.name}${stop.location ? `, ${stop.location}` : ''}`
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
   }
   const points = origin ? [origin, ...stops] : stops
   const from = coord(points[0])

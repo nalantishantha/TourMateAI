@@ -43,7 +43,9 @@ export default function AttractionMap({ attraction }) {
   const { latitude, longitude, name } = attraction
   const hasCoords =
     typeof latitude === 'number' && typeof longitude === 'number'
-  const query = hasCoords ? `${latitude},${longitude}` : null
+  const query = name 
+    ? `${name}${attraction.location ? `, ${attraction.location}` : ''}`
+    : (hasCoords ? `${latitude},${longitude}` : null)
 
   // No key (or no coordinates) → static fallback card.
   if (!MAPS_KEY || !hasCoords) {
