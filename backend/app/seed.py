@@ -671,6 +671,21 @@ def seed_db_command():
     else:
         click.echo("All attractions are already present; skipping seed.")
 
+    # Seed an admin user so anyone cloning the repo can easily get admin access
+    # by signing up via Firebase with this email address.
+    admin_email = "admin@gmail.com"
+    if not User.query.filter_by(email=admin_email).first():
+        admin_user = User(
+            name="Admin User",
+            email=admin_email,
+            is_admin=True
+        )
+        db.session.add(admin_user)
+        db.session.commit()
+        click.echo(f"Seeded admin user: {admin_email}. Sign up with this email (e.g. password: admin123) to access the admin portal.")
+    else:
+        click.echo(f"Admin user {admin_email} already exists.")
+
 
 @click.command("set-admin")
 @click.argument("email")
