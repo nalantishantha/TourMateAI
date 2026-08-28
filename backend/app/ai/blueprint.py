@@ -199,8 +199,13 @@ def generate_pdf_summary():
                 current_day = item.day_number
                 itinerary_text += f"\nDay {current_day}:\n"
             
-            attraction_name = item.attraction.name if item.attraction else "Unknown Place"
-            itinerary_text += f"- {attraction_name}\n"
+            if item.attraction:
+                name = item.attraction.name
+            elif item.hotel:
+                name = item.hotel.name
+            else:
+                name = "Unknown Place"
+            itinerary_text += f"- {name}\n"
             
         system_prompt = """You are a professional travel document generator. 
 The user has finalized their trip and wants a beautiful Markdown document that they can download as a PDF.
