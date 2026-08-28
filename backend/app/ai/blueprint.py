@@ -223,7 +223,16 @@ Do not use conversational filler. Just return the markdown."""
         ]
         
         response = llm.invoke(messages)
-        return jsonify({"markdown": response.content})
+        content = response.content.strip()
+        if content.startswith("```markdown"):
+            content = content[11:]
+        elif content.startswith("```"):
+            content = content[3:]
+        if content.endswith("```"):
+            content = content[:-3]
+        content = content.strip()
+        
+        return jsonify({"markdown": content})
         
     except Exception as e:
         import traceback
